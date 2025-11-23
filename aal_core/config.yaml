@@ -1,0 +1,23 @@
+bus:
+  url: redis://localhost:6379/0
+
+modules:
+  - name: abraxas_basic
+    path: modules.abraxas_basic.main
+    subscribe:
+      - oracle.request
+    publish:
+      - oracle.response
+
+  - name: noctis_stub
+    path: modules.noctis_stub.main
+    subscribe:
+      - dream.log
+    publish:
+      - dream.analysis
+
+  - name: log_sink
+    path: modules.log_sink.main
+    subscribe:
+      - "#"
+    publish: []
