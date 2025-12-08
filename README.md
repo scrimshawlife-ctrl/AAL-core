@@ -10,6 +10,7 @@ This repo contains the early-stage implementation of the AAL runtime designed to
 - **ResonanceFrame** (`aal_core.models`): shared data structure for all modules.
 - **Bus** (`aal_core.bus`): thin wrapper over Redis pub/sub (swappable later).
 - **Modules** (`modules/*`): eurorack-style processes that subscribe to topics, process frames, and emit new frames.
+- **Alignment System** (`aal_core.alignment`): multi-layered containment and governance for AI agents, from LLMs to AGI-adjacent capabilities. See [ALIGNMENT.md](docs/ALIGNMENT.md).
 
 ## Getting Started
 

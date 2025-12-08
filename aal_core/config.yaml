@@ -1,6 +1,45 @@
 bus:
   url: redis://localhost:6379/0
 
+# Alignment & Containment Configuration
+alignment:
+  enabled: true
+
+  # Default containment regime for new agents
+  default_regime: boxed  # lab, boxed, or field
+
+  # Tripwire monitoring
+  tripwires:
+    behavioral:
+      enabled: true
+      scan_all_outputs: true
+
+    infrastructure:
+      enabled: true
+      baseline_auto_learn: true
+      resource_spike_threshold: 3.0  # multiplier over baseline
+
+    internal_state:
+      enabled: false  # Enable when interpretability hooks available
+
+  # Self-modification controls
+  self_modification:
+    allow_proposals: true
+    require_sandbox_testing: true
+    require_human_approval: true
+    max_modifications_per_day: 5
+
+  # Objective validation
+  objective_firewall:
+    enabled: true
+    scan_implicit_objectives: true
+    forbidden_objectives:
+      - self.preservation
+      - resource.accumulation
+      - influence.max
+      - goal.guarding
+      - capability.expansion
+
 modules:
   - name: abraxas_basic
     path: modules.abraxas_basic.main
@@ -9,6 +48,15 @@ modules:
     publish:
       - oracle.response
 
+    # Alignment settings
+    alignment:
+      regime: boxed
+      capabilities:
+        - read
+        - analyze
+        - propose
+      max_capability_risk: 5
+
   - name: noctis_stub
     path: modules.noctis_stub.main
     subscribe:
@@ -16,8 +64,25 @@ modules:
     publish:
       - dream.analysis
 
+    # Alignment settings
+    alignment:
+      regime: boxed
+      capabilities:
+        - read
+        - analyze
+        - tag
+      max_capability_risk: 4
+
   - name: log_sink
     path: modules.log_sink.main
     subscribe:
       - "#"
     publish: []
+
+    # Alignment settings
+    alignment:
+      regime: boxed
+      capabilities:
+        - read
+        - log
+      max_capability_risk: 2
