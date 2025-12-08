@@ -16,9 +16,12 @@ parts/
 sdist/
 var/
 wheels/
+pip-wheel-metadata/
+share/python-wheels/
 *.egg-info/
 .installed.cfg
 *.egg
+MANIFEST
 
 # Virtual environments
 .venv/
@@ -37,6 +40,9 @@ env/
 .pytest_cache/
 .coverage
 htmlcov/
+
+# Jupyter
+.ipynb_checkpoints/
 
 # Redis
 dump.rdb
