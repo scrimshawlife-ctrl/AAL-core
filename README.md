@@ -194,6 +194,239 @@ def run_job(job: JobContext):
 4. Add metrics collection for RAM_STRESS vs degradation effectiveness
 5. Tune degradation thresholds based on workload characteristics
 
+---
+
+## Overlays
+
+AAL-Core includes a **hot-swappable overlay adapter layer** that allows external services (BeatOven, Psy-Fi, Patch-Hive, HollerSports, etc.) to integrate with the memory governance spine without library dependencies.
+
+### Architecture
+
+```
+aal_overlays/
+├── manifest.py       # Overlay schema & validation
+├── registry.py       # Install/enable/disable overlays
+├── dispatch.py       # Integration seam with MemoryAwareScheduler
+├── provenance.py     # Deterministic run_id & tracking
+└── runners/
+    ├── http_runner.py   # HTTP-based overlays
+    └── proc_runner.py   # Subprocess-based overlays
+```
+
+### Key Concepts
+
+- **Overlay**: External capability (service or CLI) with a manifest
+- **Manifest**: JSON file defining entrypoints, capabilities, memory profiles, and policies
+- **Registry**: Manages installed/enabled overlays
+- **Dispatch**: Creates JobContext + submits through MemoryAwareScheduler
+- **Provenance**: Deterministic tracking with run_id, hashes, environment fingerprint
+
+### Quick Start
+
+#### 1. Create an Overlay Manifest
+
+```python
+from aal_overlays import OverlayManifest
+
+manifest_data = {
+    "name": "psyfi",
+    "version": "0.1.0",
+    "description": "Psy-Fi simulation overlay",
+    "entrypoints": {
+        "http": {"base_url": "http://127.0.0.1:8787"}
+    },
+    "capabilities": {
+        "simulate": {
+            "runner": "http",
+            "path": "/run",
+            "method": "POST",
+            "timeout_s": 60,
+            "default_profile": "BALANCED",
+            "degradation": {
+                "max_fraction": 0.7,
+                "disable_nonessential": true
+            }
+        }
+    },
+    "resources": {"prefers_gpu": true},
+    "policy": {"deterministic": true}
+}
+
+manifest = OverlayManifest.from_dict(manifest_data)
+```
+
+#### 2. Install and Enable
+
+```python
+from aal_overlays import OverlayRegistry
+
+registry = OverlayRegistry()  # Uses .aal/overlays by default
+registry.install_manifest(manifest)
+registry.enable("psyfi")
+```
+
+#### 3. Dispatch Capability Calls
+
+```python
+from abx_runes.scheduler_memory_layer import MemoryAwareScheduler
+from aal_overlays import dispatch_capability_call, make_overlay_run_job
+
+# Create scheduler with overlay runner
+run_job = make_overlay_run_job(registry)
+scheduler = MemoryAwareScheduler(run_job)
+
+# Execute capability
+result = dispatch_capability_call(
+    scheduler=scheduler,
+    registry=registry,
+    capability="psyfi.simulate",
+    payload={
+        "simulation_type": "quantum_coherence",
+        "parameters": {"duration": 100}
+    },
+    profile="BALANCED",  # Optional; uses capability default if omitted
+    seed="fixed-seed"    # Optional; for deterministic run_id
+)
+
+print(result["ok"])          # True/False
+print(result["result"])      # Capability output
+print(result["provenance"])  # Run tracking
+```
+
+### Manifest Structure
+
+Manifests are stored at `.aal/overlays/<overlay_name>/manifest.json`:
+
+```json
+{
+  "name": "overlay_name",
+  "version": "0.1.0",
+  "description": "...",
+  "entrypoints": {
+    "http": {"base_url": "http://..."},
+    "proc": {"command": ["python", "-m", "cli"]}
+  },
+  "capabilities": {
+    "capability_name": {
+      "runner": "http",
+      "path": "/endpoint",
+      "method": "POST",
+      "timeout_s": 30,
+      "default_profile": "BALANCED",
+      "degradation": {
+        "max_fraction": 0.5,
+        "disable_nonessential": true
+      }
+    }
+  },
+  "resources": {
+    "prefers_gpu": false,
+    "notes": "Optional notes"
+  },
+  "policy": {
+    "deterministic": true
+  }
+}
+```
+
+### Memory Profiles
+
+Three built-in profiles are available:
+
+- **MINIMAL**: 512-1024MB, priority 3, LOCAL tier
+- **BALANCED**: 2-4GB, priority 5, EXTENDED tier, KV cache + degradation
+- **PERFORMANCE**: 4-8GB, priority 8, LOCAL tier, minimal degradation
+
+You can also provide custom rune text as the `profile` parameter.
+
+### Provenance Tracking
+
+Every dispatch generates a deterministic `ProvenanceRecord`:
+
+```python
+{
+  "run_id": "sha256_hash",
+  "overlay": {"name": "psyfi", "version": "0.1.0"},
+  "capability": "simulate",
+  "payload_hash": "sha256_of_payload",
+  "environment": {
+    "python_version": "3.11.0",
+    "platform": {"system": "Linux", "release": "..."},
+    "git_commit": "abc123...",
+    "timestamp_utc": "2025-12-14T12:00:00Z"
+  },
+  "deterministic": true,
+  "seed": "optional_seed"
+}
+```
+
+### HTTP Runner
+
+Uses `urllib.request` (no external deps):
+- Deterministic JSON encoding (`sort_keys=True`)
+- Automatic retries (2 attempts with exponential backoff)
+- Timeout enforcement
+- Standard response format: `{"ok": bool, "result": ..., "error": ...}`
+
+### Proc Runner
+
+Executes CLI overlays via subprocess:
+- Command: `base_command + [path, "--stdin-json"]`
+- Request sent via stdin as canonical JSON
+- Response read from stdout as JSON
+
+### Testing
+
+Run the test suite:
+
+```bash
+# Test manifests
+python tests/test_overlay_manifest.py
+
+# Test registry
+python tests/test_overlay_registry.py
+
+# Test HTTP dispatch (includes fake server)
+python tests/test_overlay_dispatch_http.py
+```
+
+Run the example:
+
+```bash
+python examples/overlay_call_example.py
+```
+
+### Integration Pattern
+
+The overlay layer integrates seamlessly with the existing memory governance:
+
+1. **Dispatch** resolves capability → creates JobContext with memory profile
+2. **MemoryAwareScheduler** applies degradation based on RAM_STRESS
+3. **Runner** executes via HTTP/proc with degraded parameters in `job.metadata`
+4. **Overlay service** reads degradation hints and adjusts behavior
+
+This architecture allows:
+- **Zero coupling**: Overlays don't import AAL-Core
+- **Hot swap**: Enable/disable overlays without restarts
+- **Memory safety**: All overlays governed by ABX-Runes constraints
+- **Provenance**: Every call tracked with deterministic run_id
+
+### Deployment Example
+
+1. **Deploy overlay service** (e.g., Psy-Fi on port 8787)
+2. **Create manifest** with service URL
+3. **Install to registry**: `registry.install_manifest(manifest)`
+4. **Enable**: `registry.enable("psyfi")`
+5. **Dispatch calls**: Memory-governed execution with automatic degradation
+
+### Next Steps
+
+1. Deploy your overlay as an HTTP service or CLI
+2. Write a manifest describing its capabilities
+3. Install and enable in registry
+4. Use `dispatch_capability_call()` for memory-safe execution
+5. Monitor provenance records for debugging and audit
+
 ## License
 
 See [LICENSE](LICENSE) file.
