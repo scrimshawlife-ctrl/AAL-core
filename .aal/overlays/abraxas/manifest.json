@@ -1,0 +1,17 @@
+{
+  "name": "abraxas",
+  "version": "0.1.0",
+  "description": "Abraxas overlay for AAL-Core",
+  "type": "overlay",
+  "engine": "aal-core",
+  "compatibility": {
+    "aal-core": ">=0.1.0"
+  },
+  "entry": "src/",
+  "dependencies": {},
+  "metadata": {
+    "author": "AAL Team",
+    "license": "MIT",
+    "repository": ""
+  }
+}
