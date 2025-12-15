@@ -27,6 +27,32 @@ def handle_align(payload: Dict[str, Any]) -> Dict[str, Any]:
     }
 
 
+def handle_ascend(payload: Dict[str, Any]) -> Dict[str, Any]:
+    """ASCEND phase: Exec-capable operations (requires 'exec' capability)."""
+    import hashlib
+
+    op = payload.get("op", "unknown")
+    value = payload.get("value", "")
+
+    if op == "hash":
+        # Simulate an exec operation (computing hash)
+        result = hashlib.sha256(value.encode()).hexdigest()
+        return {
+            "status": "ascended",
+            "operation": "hash",
+            "input": value,
+            "output": result,
+            "exec_performed": True
+        }
+    else:
+        return {
+            "status": "ascended",
+            "operation": op,
+            "message": f"Unknown operation: {op}",
+            "exec_performed": False
+        }
+
+
 def handle_clear(payload: Dict[str, Any]) -> Dict[str, Any]:
     """CLEAR phase: Read-only operations."""
     return {
@@ -48,6 +74,7 @@ def handle_seal(payload: Dict[str, Any]) -> Dict[str, Any]:
 PHASE_HANDLERS = {
     "OPEN": handle_open,
     "ALIGN": handle_align,
+    "ASCEND": handle_ascend,
     "CLEAR": handle_clear,
     "SEAL": handle_seal,
 }
@@ -61,8 +88,8 @@ def run_overlay(request: Dict[str, Any]) -> Dict[str, Any]:
     request_id = request.get("request_id")
     payload = request.get("payload", {})
 
-    # Validate
-    if overlay != "abraxas":
+    # Validate (accept both abraxas and abraxas_exec variants)
+    if not overlay or not overlay.startswith("abraxas"):
         return {
             "ok": False,
             "error": f"Unknown overlay: {overlay}",

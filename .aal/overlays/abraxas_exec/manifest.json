@@ -1,0 +1,9 @@
+{
+  "name": "abraxas_exec",
+  "version": "2.1",
+  "status": "experimental",
+  "phases": ["OPEN", "ALIGN", "ASCEND", "CLEAR", "SEAL"],
+  "capabilities": ["analysis", "exec"],
+  "entrypoint": "python src/run.py",
+  "timeout_ms": 2500
+}

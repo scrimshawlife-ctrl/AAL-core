@@ -229,7 +229,17 @@ Overlays are located in `.aal/overlays/{name}/`:
 - `manifest.json` - Metadata, phases, capabilities, timeout
 - `src/run.py` - Executable that reads JSON from stdin, writes to stdout
 
-See `.aal/overlays/abraxas/` for an example.
+**Examples:**
+- `.aal/overlays/abraxas/` - Analysis-only overlay (phases: OPEN, ALIGN, CLEAR, SEAL)
+- `.aal/overlays/abraxas_exec/` - Exec-capable overlay (adds ASCEND phase with 'exec' capability)
+
+### Capability Enforcement
+
+Overlays declare capabilities in their manifest:
+- `analysis` - Read-only analysis operations (CLEAR phase)
+- `exec` - Execution operations (ASCEND phase)
+
+The bus enforces that overlays can only use phases declared in their manifest. This provides defense-in-depth against capability escalation.
 
 ## Next Steps
 
