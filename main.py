@@ -14,6 +14,8 @@ from datetime import datetime
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 
+from bus.policy import enforce_phase_policy
+
 
 app = FastAPI(title="AAL-Core", version="1.0.0")
 
@@ -183,6 +185,12 @@ def invoke_overlay(overlay_name: str, req: InvokeRequest):
             400,
             f"Invalid phase '{req.phase}' for overlay '{overlay_name}'. Valid: {valid_phases}"
         )
+
+    # Enforce phase policy
+    overlay_caps = manifest.get("capabilities", [])
+    policy_decision = enforce_phase_policy(req.phase, overlay_caps)
+    if not policy_decision.ok:
+        raise HTTPException(403, policy_decision.reason)
 
     # Compute payload hash for provenance
     payload_hash = compute_payload_hash(req.data)
