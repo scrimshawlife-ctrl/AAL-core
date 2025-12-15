@@ -2,6 +2,7 @@
 """
 AAL-Core: Append-only overlay bus with provenance logging
 """
+import os
 import json
 import hashlib
 import subprocess
@@ -53,7 +54,7 @@ def load_overlay_manifest(overlay_name: str) -> Dict[str, Any]:
 
 def compute_payload_hash(data: Dict[str, Any]) -> str:
     """Compute deterministic SHA256 hash of payload."""
-    canonical = json.dumps(data, sort_keys=True, separators=(",", ":"))
+    canonical = json.dumps(data, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
     return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
 
 
@@ -186,6 +187,9 @@ def invoke_overlay(overlay_name: str, req: InvokeRequest):
     # Compute payload hash for provenance
     payload_hash = compute_payload_hash(req.data)
 
+    # Dev mode: log full payload for exact replay
+    dev_log_payload = os.environ.get("AAL_DEV_LOG_PAYLOAD", "0") == "1"
+
     # Execute overlay
     start_ms = int(time.time() * 1000)
     overlay_response = invoke_overlay_subprocess(
@@ -205,11 +209,15 @@ def invoke_overlay(overlay_name: str, req: InvokeRequest):
         "version": manifest.get("version"),
         "phase": req.phase,
         "payload_hash": payload_hash,
-        "payload": req.data,  # Optional: dev-only, remove in prod
         "ok": overlay_response.get("ok"),
         "duration_ms": end_ms - start_ms,
         "error": overlay_response.get("error")
     }
+
+    # Dev-only: store full payload for exact replay
+    if dev_log_payload:
+        provenance_event["payload"] = req.data
+
     append_jsonl(PROVENANCE_LOG, provenance_event)
 
     # Return response

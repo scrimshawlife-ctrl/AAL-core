@@ -45,6 +45,19 @@ Abraxas Overlay
 
 ## Changelog
 
+### 2025-12-15 - Replay Upgrade
+- **Payload logging now controlled by AAL_DEV_LOG_PAYLOAD env var**
+  - Default (production): Only SHA256 payload hash logged
+  - Dev mode (AAL_DEV_LOG_PAYLOAD=1): Full payload logged for exact replay
+- **Added TOOLS/replay.py for deterministic replay**
+  - Replays exact payload from provenance log
+  - Validates manifest hasn't drifted (optional warning)
+  - Refuses replay if payload missing (directs user to enable dev mode)
+- **Enhanced test suite**
+  - Added test_dev_mode_payload_logging
+  - Added test_replay_functionality
+  - 7/7 tests passing
+
 ### 2025-12-15
 - Initial AAL-Core bus implementation
 - Abraxas overlay integration (v2.1)
