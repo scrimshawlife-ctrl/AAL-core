@@ -47,3 +47,6 @@ htmlcov/
 
 # Jupyter
 .ipynb_checkpoints/
+
+# AAL-Core runtime
+logs/
