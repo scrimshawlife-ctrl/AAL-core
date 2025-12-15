@@ -28,7 +28,7 @@ def health():
 
 @app.get("/overlays")
 def list_overlays():
-    overlays = load_overlays(OVERLAYS_DIR)
+    overlays = load_overlays(OVERLAYS_DIR, use_cache=True)
     return {
         "count": len(overlays),
         "overlays": [
@@ -39,7 +39,7 @@ def list_overlays():
                 "phases": mf.phases,
                 "timeout_ms": mf.timeout_ms,
             }
-            for (_, mf) in overlays.values()
+            for (_, mf, _) in overlays.values()
         ],
     }
 
@@ -51,11 +51,11 @@ def invoke_overlay(overlay_name: str, payload: dict):
       - phase: one of OPEN/ALIGN/ASCEND/CLEAR/SEAL
       - data: dict (user payload)
     """
-    overlays = load_overlays(OVERLAYS_DIR)
+    overlays = load_overlays(OVERLAYS_DIR, use_cache=True)
     if overlay_name not in overlays:
         raise HTTPException(status_code=404, detail="Overlay not found")
 
-    overlay_dir, mf = overlays[overlay_name]
+    overlay_dir, mf, mf_hash = overlays[overlay_name]
 
     phase = payload.get("phase")
     if phase not in ("OPEN", "ALIGN", "ASCEND", "CLEAR", "SEAL"):
@@ -78,6 +78,7 @@ def invoke_overlay(overlay_name: str, payload: dict):
     result = run_overlay(
         overlay_dir=overlay_dir,
         manifest=mf,
+        manifest_hash=mf_hash,
         phase=phase,  # type: ignore
         payload=data,
         request_id=request_id,
@@ -93,6 +94,7 @@ def invoke_overlay(overlay_name: str, payload: dict):
             "overlay": overlay_name,
             "phase": phase,
             "manifest_version": mf.version,
+            "manifest_hash": mf_hash,
             "entrypoint": mf.entrypoint,
             "ok": result.ok,
             "exit_code": result.exit_code,

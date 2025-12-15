@@ -21,6 +21,7 @@ def _clean_env() -> dict[str, str]:
 def run_overlay(
     overlay_dir: Path,
     manifest: OverlayManifest,
+    manifest_hash: str,
     phase: Phase,
     payload: Dict[str, Any],
     request_id: str,
@@ -44,6 +45,7 @@ def run_overlay(
     prov_event = {
         "overlay": manifest.name,
         "version": manifest.version,
+        "manifest_hash": manifest_hash,
         "phase": phase,
         "entrypoint": manifest.entrypoint,
         "request_id": request_id,
