@@ -26,6 +26,7 @@ def run_overlay(
     payload: Dict[str, Any],
     request_id: str,
     timestamp_ms: int,
+    policy_checked: bool = False,
 ) -> InvocationResult:
     start = time.time()
     cmd = shlex.split(manifest.entrypoint)
@@ -88,6 +89,7 @@ def run_overlay(
             duration_ms=duration_ms,
             provenance_hash=prov_hash,
             output_json=out_json,
+            policy_checked=policy_checked,
         )
 
     except subprocess.TimeoutExpired as e:
@@ -102,4 +104,5 @@ def run_overlay(
             duration_ms=duration_ms,
             provenance_hash=prov_hash,
             output_json=None,
+            policy_checked=policy_checked,
         )

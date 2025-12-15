@@ -12,6 +12,7 @@ class OverlayManifest:
     phases: List[Phase]
     entrypoint: str  # e.g. "python run.py"
     timeout_ms: int = 2500
+    capabilities: Optional[List[str]] = None  # Optional declared capabilities
 
 @dataclass(frozen=True)
 class InvocationRequest:
@@ -31,3 +32,5 @@ class InvocationResult:
     provenance_hash: str
     # Optional structured output if overlay emits JSON on stdout
     output_json: Optional[Dict[str, Any]] = None
+    policy_checked: bool = False  # Whether policy enforcement ran
+    policy_violation: Optional[str] = None  # Policy violation details if any

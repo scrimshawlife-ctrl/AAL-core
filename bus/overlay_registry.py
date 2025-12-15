@@ -59,6 +59,7 @@ def load_overlays(overlays_dir: Path, use_cache: bool = True) -> Dict[str, Tuple
             phases=_as_phase_list(raw_data.get("phases", [])),
             entrypoint=str(raw_data.get("entrypoint", "")).strip(),
             timeout_ms=int(raw_data.get("timeout_ms", 2500)),
+            capabilities=raw_data.get("capabilities"),  # Optional
         )
 
         if not mf.entrypoint:

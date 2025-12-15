@@ -7,14 +7,19 @@ from bus.overlay_registry import load_overlays
 from bus.provenance import append_jsonl, now_unix_ms
 from bus.sandbox import run_overlay
 from bus.types import Phase
+from bus.phase_policy import PolicyRegistry, PolicyViolation
 
 APP_START_MS = now_unix_ms()
 
 ROOT = Path(__file__).resolve().parent
 OVERLAYS_DIR = ROOT / ".aal" / "overlays"
 LOG_PATH = ROOT / "logs" / "provenance.jsonl"
+POLICY_FILE = ROOT / "policies" / "phase_constraints.yaml"
 
-app = FastAPI(title="AAL-Core Bus", version="0.2.0")
+# Load phase policies at startup
+POLICY_REGISTRY = PolicyRegistry(POLICY_FILE)
+
+app = FastAPI(title="AAL-Core Bus", version="0.3.0")
 
 
 @app.get("/health")
@@ -74,7 +79,40 @@ def invoke_overlay(overlay_name: str, payload: dict):
     request_id = str(uuid.uuid4())
     ts = now_unix_ms()
 
-    # Execute sandboxed
+    # Phase policy enforcement
+    policy_checked = False
+    policy_violation = None
+    try:
+        POLICY_REGISTRY.check_execution(
+            phase=phase,  # type: ignore
+            entrypoint=mf.entrypoint,
+            timeout_ms=mf.timeout_ms,
+            capabilities=mf.capabilities,
+        )
+        policy_checked = True
+    except PolicyViolation as e:
+        policy_violation = str(e)
+        # Log policy violation in provenance
+        append_jsonl(
+            LOG_PATH,
+            {
+                "request_id": request_id,
+                "timestamp_ms": ts,
+                "overlay": overlay_name,
+                "phase": phase,
+                "manifest_version": mf.version,
+                "manifest_hash": mf_hash,
+                "entrypoint": mf.entrypoint,
+                "ok": False,
+                "policy_checked": True,
+                "policy_violation": policy_violation,
+                "exit_code": -1,
+                "duration_ms": 0,
+            },
+        )
+        raise HTTPException(status_code=403, detail=f"Policy violation: {policy_violation}")
+
+    # Execute sandboxed (only if policy check passed)
     result = run_overlay(
         overlay_dir=overlay_dir,
         manifest=mf,
@@ -83,6 +121,7 @@ def invoke_overlay(overlay_name: str, payload: dict):
         payload=data,
         request_id=request_id,
         timestamp_ms=ts,
+        policy_checked=policy_checked,
     )
 
     # Append provenance log (append-only)
@@ -96,6 +135,7 @@ def invoke_overlay(overlay_name: str, payload: dict):
             "manifest_version": mf.version,
             "manifest_hash": mf_hash,
             "entrypoint": mf.entrypoint,
+            "policy_checked": result.policy_checked,
             "ok": result.ok,
             "exit_code": result.exit_code,
             "duration_ms": result.duration_ms,
@@ -108,6 +148,7 @@ def invoke_overlay(overlay_name: str, payload: dict):
         "ok": result.ok,
         "overlay": result.overlay,
         "phase": result.phase,
+        "policy_checked": result.policy_checked,
         "duration_ms": result.duration_ms,
         "exit_code": result.exit_code,
         "provenance_hash": result.provenance_hash,
