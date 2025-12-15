@@ -1,0 +1,8 @@
+{
+  "name": "abraxas",
+  "version": "2.1",
+  "status": "active",
+  "phases": ["OPEN", "ALIGN", "CLEAR"],
+  "entrypoint": "python run.py",
+  "timeout_ms": 2500
+}
