@@ -186,6 +186,51 @@ def run_job(job: JobContext):
         offload_to(job.metadata["offload_tier"])
 ```
 
+## AAL-Core Overlay Bus
+
+AAL-Core also provides an overlay invocation bus with append-only provenance logging:
+
+### Starting the Bus
+
+```bash
+uvicorn main:app --reload
+```
+
+### Invoking an Overlay
+
+```bash
+curl -X POST "http://127.0.0.1:8000/invoke/abraxas" \
+  -H "Content-Type: application/json" \
+  -d '{"phase":"OPEN","data":{"prompt":"hello","intent":"test"}}' | jq .
+```
+
+### Provenance & Replay
+
+All invocations are logged to `logs/provenance.jsonl` with SHA256 payload hashing.
+
+**Enable Dev Mode (logs full payload for exact replay):**
+```bash
+export AAL_DEV_LOG_PAYLOAD=1
+```
+
+**Replay a provenance event:**
+```bash
+python3 TOOLS/replay.py 1  # Replay line 1
+```
+
+**View provenance log:**
+```bash
+tail -n 10 logs/provenance.jsonl | jq .
+```
+
+### Overlay Structure
+
+Overlays are located in `.aal/overlays/{name}/`:
+- `manifest.json` - Metadata, phases, capabilities, timeout
+- `src/run.py` - Executable that reads JSON from stdin, writes to stdout
+
+See `.aal/overlays/abraxas/` for an example.
+
 ## Next Steps
 
 1. Wire your LLM/pipeline to respect `job.metadata` parameters
@@ -193,6 +238,7 @@ def run_job(job: JobContext):
 3. Implement tier-specific memory allocators (LOCAL/EXTENDED/COLD)
 4. Add metrics collection for RAM_STRESS vs degradation effectiveness
 5. Tune degradation thresholds based on workload characteristics
+6. Add overlay capability enforcement (block writes in CLEAR phase)
 
 ## License
 
