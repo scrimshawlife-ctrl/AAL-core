@@ -1,0 +1,141 @@
+# Sport Normalizer Schema v1.0
+# Human-readable schema contract for sport-agnostic normalization
+
+schema_version: "1.0"
+
+description: |
+  This schema defines the contract for mapping any sport into NBA-grade
+  primitives (Opportunity, Usage, Continuity, Volatility, Failure Modes).
+  NBA is the reference standard; other sports must explicitly diverge.
+
+required_fields:
+  schema_version:
+    type: string
+    required: true
+    description: Schema version identifier (currently "1.0")
+
+  sport_id:
+    type: string
+    required: true
+    description: Unique sport identifier (e.g., NBA, NHL, NFL)
+
+  version:
+    type: string
+    required: true
+    description: Normalizer configuration version
+
+  opportunity:
+    type: object
+    required: true
+    description: Opportunity primitives (playing time, exposure)
+    fields:
+      unit:
+        type: string
+        required: true
+        description: Measurement unit (e.g., "minutes", "snaps")
+      stability_score:
+        type: float
+        required: true
+        range: [0.0, 1.0]
+        description: How stable opportunity allocation is (0=volatile, 1=stable)
+
+  usage:
+    type: object
+    required: true
+    description: Usage primitives (involvement, concentration)
+    fields:
+      unit:
+        type: string
+        required: true
+        description: Measurement unit (e.g., "usage_rate", "target_share")
+      concentration_score:
+        type: float
+        required: true
+        range: [0.0, 1.0]
+        description: How concentrated usage is (0=distributed, 1=concentrated)
+
+  continuity:
+    type: object
+    required: true
+    description: Event flow and distribution characteristics
+    fields:
+      event_rate:
+        type: float
+        required: true
+        range: [0.0, inf]
+        description: Average events per game
+      distribution_shape:
+        type: enum
+        required: true
+        values: ["normal", "skewed", "spiky", "binary"]
+        description: Statistical distribution of events
+
+  volatility:
+    type: object
+    required: true
+    description: Variance characteristics at different scales
+    fields:
+      per_event_variance:
+        type: float
+        required: true
+        range: [0.0, inf]
+        description: Variance per individual event
+      game_level_variance:
+        type: float
+        required: true
+        range: [0.0, inf]
+        description: Variance across games
+
+  failure_modes:
+    type: object
+    required: true
+    description: Bad script detection and effects
+    fields:
+      bad_script_definition:
+        type: string
+        required: true
+        description: What constitutes a "bad script" for this sport
+      bad_script_effects:
+        type: object
+        required: true
+        fields:
+          suppresses:
+            type: list[string]
+            required: true
+            allow_empty: true
+            description: Stats suppressed during bad scripts
+          inflates:
+            type: list[string]
+            required: true
+            allow_empty: true
+            description: Stats inflated during bad scripts
+
+  stat_map:
+    type: dict[string, object]
+    required: true
+    description: Per-stat primitive mapping
+    min_entries: 1
+    value_schema:
+      primitive:
+        type: enum
+        required: true
+        values: ["opportunity", "usage", "hybrid", "event"]
+        description: Which primitive this stat maps to
+      survivability_score:
+        type: float
+        required: true
+        range: [0.0, 1.0]
+        description: How well stat survives bad scripts (0=fragile, 1=robust)
+
+optional_fields:
+  meta:
+    type: object
+    required: false
+    description: Optional metadata
+    fields:
+      notes:
+        type: string
+        required: false
+      sources:
+        type: list[string]
+        required: false

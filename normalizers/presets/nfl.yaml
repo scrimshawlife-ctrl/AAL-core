@@ -1,0 +1,48 @@
+# NFL Sport Normalizer (Stress Case)
+# Version 1.0
+
+schema_version: "1.0"
+sport_id: "NFL"
+version: "1.0"
+
+opportunity:
+  unit: "snaps"
+  stability_score: 0.62
+
+usage:
+  unit: "target_share"
+  concentration_score: 0.55
+
+continuity:
+  event_rate: 60
+  distribution_shape: "spiky"
+
+volatility:
+  per_event_variance: 0.38
+  game_level_variance: 0.55
+
+failure_modes:
+  bad_script_definition: "trailing by 7+"
+  bad_script_effects:
+    suppresses:
+      - "rush_attempts"
+    inflates:
+      - "targets"
+      - "receptions"
+
+stat_map:
+  receptions:
+    primitive: "opportunity"
+    survivability_score: 0.68
+  yards:
+    primitive: "hybrid"
+    survivability_score: 0.52
+  touchdowns:
+    primitive: "event"
+    survivability_score: 0.20
+
+meta:
+  notes: "NFL represents the stress case with highest variance and most spiky distributions. Low sample size (16-17 games) amplifies volatility."
+  sources:
+    - "NFL Stats API 2019-2024"
+    - "Football Outsiders variance studies"
