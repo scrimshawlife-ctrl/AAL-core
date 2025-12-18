@@ -240,6 +240,30 @@ See `.aal/overlays/abraxas/` for an example.
 5. Tune degradation thresholds based on workload characteristics
 6. Add overlay capability enforcement (block writes in CLEAR phase)
 
+## Jetson Orin Nano prep (post-flash, pre-brainstem)
+
+This bootstrap readies AAL-Core on a freshly flashed Orin Nano before loading brainstem:
+
+1. Clone the repo on the device and run the prep script (installs system deps, builds a venv, installs Python deps, writes a systemd unit template):
+   ```bash
+   cd ~/AAL-core
+   # Optional env: VENV_DIR=</path>, SERVICE_NAME=aal-core, AAL_PORT=8000, RUN_TESTS=1
+   bash TOOLS/orin_nano_prep.sh
+   ```
+2. Install the generated service for auto-start (defaults to port 8000 and AAL_DEV_LOG_PAYLOAD=0):
+   ```bash
+   sudo cp TOOLS/aal-core.service /etc/systemd/system/aal-core.service
+   sudo systemctl daemon-reload
+   sudo systemctl enable --now aal-core.service
+   ```
+3. Validate the bus:
+   ```bash
+   curl http://localhost:8000/
+   curl http://localhost:8000/overlays
+   tail -n 5 logs/provenance.jsonl  # after an invoke
+   ```
+4. When brainstem is ready to attach, point it at the service host/port above; set `AAL_DEV_LOG_PAYLOAD=1` in the unit if you want full payload replay logging.
+
 ## License
 
 See [LICENSE](LICENSE) file.
