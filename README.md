@@ -186,6 +186,113 @@ def run_job(job: JobContext):
         offload_to(job.metadata["offload_tier"])
 ```
 
+## Dynamic Function Registry (DFD)
+
+AAL-Core includes a Dynamic Function Registry for discovering and cataloging functions from multiple sources:
+
+- **Python module exports** - Functions exported via overlay manifest `py_exports`
+- **Remote service endpoints** - Functions fetched from remote services via `service_url`
+- **Change detection** - Automatic hash-based catalog versioning
+- **Event publishing** - Publishes `fn.registry.updated` events to provenance log
+
+### API Endpoints
+
+**Get current function catalog:**
+```bash
+curl http://127.0.0.1:8000/functions | jq .
+```
+
+Returns:
+```json
+{
+  "functions": [...],
+  "catalog_hash": "sha256:abc123...",
+  "generated_at_unix": 1234567890,
+  "count": 42
+}
+```
+
+**Force refresh and detect changes:**
+```bash
+curl -X POST http://127.0.0.1:8000/functions/refresh | jq .
+```
+
+Returns:
+```json
+{
+  "catalog_hash": "sha256:def456...",
+  "generated_at_unix": 1234567890,
+  "count": 43,
+  "updated": true,
+  "previous_hash": "sha256:abc123..."
+}
+```
+
+### Function Descriptor Schema
+
+Each function descriptor requires:
+- `id` - Unique function identifier
+- `name` - Human-readable name
+- `kind` - Function type (e.g., "transform", "analyze")
+- `version` - Version string
+- `owner` - Owner identifier
+- `inputs_schema` - JSON schema for inputs
+- `outputs_schema` - JSON schema for outputs
+- `capabilities` - List of capability strings
+- `provenance` - Provenance metadata
+
+### Adding Functions via Python Exports
+
+In your overlay manifest.json:
+```json
+{
+  "name": "my_overlay",
+  "version": "1.0",
+  "py_exports": ["my_module.functions"]
+}
+```
+
+In `my_module/functions.py`:
+```python
+EXPORTS = [
+    {
+        "id": "my_func",
+        "name": "My Function",
+        "kind": "transform",
+        "version": "1.0",
+        "owner": "me",
+        "inputs_schema": {"type": "object"},
+        "outputs_schema": {"type": "object"},
+        "capabilities": ["compute"],
+        "provenance": {"source": "my_module"}
+    }
+]
+```
+
+### Adding Functions via Remote Services
+
+In your overlay manifest.json:
+```json
+{
+  "name": "remote_overlay",
+  "version": "1.0",
+  "service_url": "http://remote-service:8080"
+}
+```
+
+The remote service should expose `GET /abx/functions` returning:
+```json
+{
+  "functions": [
+    {
+      "id": "remote_func",
+      "name": "Remote Function",
+      ...
+    }
+  ]
+}
+```
+
 ## AAL-Core Overlay Bus
 
 AAL-Core also provides an overlay invocation bus with append-only provenance logging:

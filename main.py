@@ -14,6 +14,8 @@ from datetime import datetime
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 
+from aal_core.registry import FunctionRegistry
+
 
 app = FastAPI(title="AAL-Core", version="1.0.0")
 
@@ -24,6 +26,32 @@ PROVENANCE_LOG = LOGS_DIR / "provenance.jsonl"
 
 # Ensure logs directory exists
 LOGS_DIR.mkdir(exist_ok=True)
+
+
+class EventBus:
+    """Simple event bus that logs events to provenance."""
+
+    def __init__(self, provenance_log: Path):
+        self.provenance_log = provenance_log
+
+    def publish(self, event: str, data: Dict[str, Any]) -> None:
+        """Publish event to provenance log.
+
+        Args:
+            event: Event name (e.g., 'fn.registry.updated')
+            data: Event payload
+        """
+        event_record = {
+            "event": event,
+            "timestamp_ms": int(time.time() * 1000),
+            **data
+        }
+        append_jsonl(self.provenance_log, event_record)
+
+
+# Initialize event bus and function registry
+event_bus = EventBus(PROVENANCE_LOG)
+function_registry = FunctionRegistry(event_bus, str(OVERLAYS_DIR))
 
 
 class InvokeRequest(BaseModel):
@@ -244,6 +272,42 @@ def get_provenance(limit: int = 100):
 
     events = [json.loads(line) for line in lines[-limit:]]
     return {"events": events, "count": len(events)}
+
+
+@app.get("/functions")
+def get_functions():
+    """Retrieve current function catalog snapshot.
+
+    Returns:
+        Catalog snapshot with function descriptors, hash, and metadata
+    """
+    snapshot = function_registry.get_snapshot()
+    return {
+        "functions": snapshot.descriptors,
+        "catalog_hash": snapshot.catalog_hash,
+        "generated_at_unix": snapshot.generated_at_unix,
+        "count": len(snapshot.descriptors)
+    }
+
+
+@app.post("/functions/refresh")
+def refresh_functions():
+    """Force rebuild of function catalog and publish update event if changed.
+
+    Returns:
+        Catalog metadata with update status
+    """
+    old_hash = function_registry.last_hash
+    function_registry.tick()
+    snapshot = function_registry.get_snapshot()
+
+    return {
+        "catalog_hash": snapshot.catalog_hash,
+        "generated_at_unix": snapshot.generated_at_unix,
+        "count": len(snapshot.descriptors),
+        "updated": old_hash != snapshot.catalog_hash,
+        "previous_hash": old_hash
+    }
 
 
 if __name__ == "__main__":
