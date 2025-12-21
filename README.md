@@ -231,6 +231,93 @@ Overlays are located in `.aal/overlays/{name}/`:
 
 See `.aal/overlays/abraxas/` for an example.
 
+## Dynamic Function Discovery (DFD)
+
+**DFD Rune**: ᛞᚠᛞ (Discovery → Catalog → Propagation)
+
+AAL-Core includes a Dynamic Function Discovery system that automatically discovers and indexes capabilities from Abraxas and overlays, creating a canonical function catalog.
+
+### Features
+
+- **Deterministic discovery**: Reproducible catalog from the same artifacts
+- **Provenance embedded**: Every function includes repo/commit/hash metadata
+- **Multiple sources**: Python exports, HTTP endpoints, overlay manifests
+- **Event bus integration**: Publishes `fn.registry.updated` on catalog changes
+- **Capability declarations**: Functions declare capabilities (no_net, read_only, etc.)
+
+### Quick Start
+
+```bash
+# Start the service
+uvicorn main:app --reload
+
+# Get function catalog
+curl http://localhost:8000/fn/catalog | jq .
+
+# Manually rebuild catalog
+curl -X POST http://localhost:8000/fn/rebuild | jq .
+
+# View bus events (includes fn.registry.updated)
+curl http://localhost:8000/events | jq .
+```
+
+### Discovered Functions
+
+The system automatically discovers Abraxas functions:
+
+```
+- abx.metric.alive.v1     - Alive Metric (metric)
+- abx.metric.entropy.v1   - Entropy Metric (metric)
+- abx.rune.open.v1        - OPEN Phase Rune (rune)
+- abx.rune.seal.v1        - SEAL Phase Rune (rune)
+- abx.op.full_cycle.v1    - Full Abraxas Cycle (op)
+```
+
+### Adding Functions
+
+1. Define function descriptor in your exports module:
+
+```python
+# your_overlay/exports.py
+EXPORTS = [
+    {
+        "id": "my.metric.example.v1",
+        "name": "Example Metric",
+        "kind": "metric",
+        "version": "1.0.0",
+        "owner": "my_overlay",
+        "entrypoint": "my_overlay.metrics:compute",
+        "inputs_schema": {"type": "object", "properties": {}},
+        "outputs_schema": {"type": "object", "properties": {}},
+        "capabilities": ["read_only"],
+        "provenance": {
+            "repo": "https://github.com/...",
+            "commit": "abc123",
+            "artifact_hash": "sha256:...",
+            "generated_at": 1703001234
+        }
+    }
+]
+```
+
+2. Update overlay manifest:
+
+```json
+{
+  "name": "my_overlay",
+  "version": "1.0.0",
+  "py_exports": ["your_overlay.exports"]
+}
+```
+
+3. Restart service or call `/fn/rebuild`
+
+### Documentation
+
+- Full specification: [docs/DFD_SPEC.md](docs/DFD_SPEC.md)
+- Module README: [aal_core/services/fn_registry/README.md](aal_core/services/fn_registry/README.md)
+- Tests: `pytest tests/test_fn_registry.py -v`
+
 ## Next Steps
 
 1. Wire your LLM/pipeline to respect `job.metadata` parameters

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-AAL-Core: Append-only overlay bus with provenance logging
+AAL-Core: Append-only overlay bus with provenance logging + Dynamic Function Discovery
 """
 import os
 import json
@@ -14,6 +14,10 @@ from datetime import datetime
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 
+# AAL-core services
+from aal_core.bus import EventBus
+from aal_core.services.fn_registry import FunctionRegistry, bind_fn_registry_routes
+
 
 app = FastAPI(title="AAL-Core", version="1.0.0")
 
@@ -21,9 +25,22 @@ app = FastAPI(title="AAL-Core", version="1.0.0")
 OVERLAYS_DIR = Path(__file__).parent / ".aal" / "overlays"
 LOGS_DIR = Path(__file__).parent / "logs"
 PROVENANCE_LOG = LOGS_DIR / "provenance.jsonl"
+EVENTS_LOG = LOGS_DIR / "events.jsonl"
 
 # Ensure logs directory exists
 LOGS_DIR.mkdir(exist_ok=True)
+
+# Initialize event bus
+event_bus = EventBus(log_path=EVENTS_LOG)
+
+# Initialize function registry
+fn_registry = FunctionRegistry(
+    bus=event_bus,
+    overlays_root=str(OVERLAYS_DIR)
+)
+
+# Build initial catalog
+fn_registry.tick()
 
 
 class InvokeRequest(BaseModel):
@@ -244,6 +261,35 @@ def get_provenance(limit: int = 100):
 
     events = [json.loads(line) for line in lines[-limit:]]
     return {"events": events, "count": len(events)}
+
+
+@app.get("/events")
+def get_events(limit: int = 100):
+    """Retrieve recent bus events."""
+    events = event_bus.get_recent_events(limit=limit)
+    return {"events": events, "count": len(events)}
+
+
+@app.post("/fn/rebuild")
+def rebuild_fn_catalog():
+    """
+    Manually trigger function catalog rebuild.
+
+    Returns updated catalog hash and count.
+    """
+    fn_registry.tick()
+    snapshot = fn_registry.get_snapshot()
+
+    return {
+        "ok": True,
+        "catalog_hash": snapshot.catalog_hash,
+        "count": snapshot.count,
+        "generated_at_unix": snapshot.generated_at_unix
+    }
+
+
+# Bind function registry routes
+bind_fn_registry_routes(app, fn_registry)
 
 
 if __name__ == "__main__":
