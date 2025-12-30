@@ -16,6 +16,7 @@ from .schema import (
 )
 from .hashing import canonical_json_dumps
 from .io import recompute_and_lock_hash
+from .overlay_introspect import load_overlay_manifest_json, extract_declared_runes
 
 
 @dataclass(frozen=True)
@@ -101,9 +102,12 @@ def emit_manifest_from_repo(cfg: RealEmitterConfig, prov: ProvenanceSpec) -> Dic
         promotion_state=PromotionState.PROMOTED,
     ))
 
-    # Overlay nodes (default: MIDGARD/neutral; overrideable)
+    # Overlay nodes + optional rune nodes (declared via overlay manifest JSON)
     for name in overlay_names:
         oid = f"overlay.{name}"
+        overlay_dir = overlays_path / name
+
+        # overlay classification (safe default)
         realm, lane = _apply_override(oid, overrides, default_realm=Realm.MIDGARD, default_lane=Lane.NEUTRAL)
         nodes.append(_node_dict(
             id=oid,
@@ -115,6 +119,39 @@ def emit_manifest_from_repo(cfg: RealEmitterConfig, prov: ProvenanceSpec) -> Dic
             depends_on=("kernel.registry", "realm.midgard"),
             promotion_state=PromotionState.CANDIDATE,
         ))
+
+        # declared runes (only if explicitly declared by JSON)
+        om = load_overlay_manifest_json(overlay_dir)
+        if om is None:
+            continue
+
+        declared = extract_declared_runes(om)
+        for d in declared:
+            # rune node id is declared id; parent is overlay shell
+            rid = d.rune_id
+            r_override = overrides.get(rid, {})
+
+            # Default rune realm/lane inherit from overlay unless overridden
+            r_realm, r_lane = _apply_override(
+                rid,
+                overrides,
+                default_realm=realm,
+                default_lane=lane,
+            )
+
+            # Rune depends on overlay shell plus any declared deps (later validated)
+            deps = tuple(sorted(set((oid,)) | set(d.depends_on)))
+
+            nodes.append(_node_dict(
+                id=rid,
+                kind=NodeKind.RUNE,
+                realm=r_realm,
+                lane=r_lane,
+                authority_level=60,
+                parent=oid,
+                depends_on=deps,
+                promotion_state=PromotionState(str(r_override.get("promotion_state", "candidate"))),
+            ))
 
     manifest = {
         "provenance": {
