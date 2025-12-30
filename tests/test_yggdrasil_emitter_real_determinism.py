@@ -28,7 +28,11 @@ def test_emitter_is_deterministic_for_same_filesystem():
 
         # declare a rune inside abraxas overlay that depends on realm.asgard (cross-realm) to force link generation
         (overlays / "abraxas" / "manifest.json").write_text(
-            json.dumps({"runes": [{"id": "abraxas.r1", "depends_on": ["realm.asgard"]}]}),
+            json.dumps({
+                "schema_version": "yggdrasil-overlay/0.1",
+                "overlay": {"id": "abraxas"},
+                "runes": [{"id": "abraxas.r1", "depends_on": ["realm.asgard"]}]
+            }),
             encoding="utf-8"
         )
 
@@ -66,6 +70,8 @@ def test_emitter_detects_forbidden_shadow_to_forecast_crossing():
         # Shadow rune -> forecast rune dependency (forbidden bridge)
         (overlays / "shadow_overlay" / "manifest.json").write_text(
             json.dumps({
+                "schema_version": "yggdrasil-overlay/0.1",
+                "overlay": {"id": "shadow_overlay"},
                 "runes": [
                     {"id": "shadow_overlay.shadow_rune", "depends_on": []},
                     {"id": "shadow_overlay.forecast_rune", "depends_on": ["shadow_overlay.shadow_rune"]},

@@ -21,7 +21,14 @@ def test_extract_declared_runes_is_deterministic():
 def test_load_overlay_manifest_json_reads_manifest_json():
     with TemporaryDirectory() as td:
         d = Path(td)
-        (d / "manifest.json").write_text(json.dumps({"runes": [{"id": "a"}]}), encoding="utf-8")
+        (d / "manifest.json").write_text(
+            json.dumps({
+                "schema_version": "yggdrasil-overlay/0.1",
+                "overlay": {"id": "test"},
+                "runes": [{"id": "a"}]
+            }),
+            encoding="utf-8"
+        )
         loaded = load_overlay_manifest_json(d)
         assert loaded is not None
         assert loaded.get("runes")[0]["id"] == "a"

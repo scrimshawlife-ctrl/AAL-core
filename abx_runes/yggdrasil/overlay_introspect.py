@@ -5,6 +5,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
+from .overlay_schema_validate import validate_overlay_manifest, OverlaySchemaError
+
 
 @dataclass(frozen=True)
 class OverlayRuneDecl:
@@ -25,7 +27,8 @@ def load_overlay_manifest_json(overlay_dir: Path) -> Optional[Dict[str, Any]]:
       - overlay.json
       - yggdrasil.overlay.json
 
-    If none exist or JSON is invalid, return None (deterministic soft-fail).
+    Validates against yggdrasil-overlay/0.1 schema contract.
+    If none exist, JSON is invalid, or schema validation fails, return None (deterministic soft-fail).
     """
     candidates = (
         overlay_dir / "manifest.json",
@@ -36,8 +39,12 @@ def load_overlay_manifest_json(overlay_dir: Path) -> Optional[Dict[str, Any]]:
         if not p.exists() or not p.is_file():
             continue
         try:
-            return json.loads(p.read_text(encoding="utf-8"))
+            d = json.loads(p.read_text(encoding="utf-8"))
+            # Validate contract; on failure treat as None (deterministic soft-fail)
+            validate_overlay_manifest(d)
+            return d
         except Exception:
+            # JSON parse error or schema validation error - soft fail
             return None
     return None
 

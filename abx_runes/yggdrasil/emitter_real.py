@@ -47,6 +47,7 @@ def emit_manifest_from_repo(cfg: RealEmitterConfig, prov: ProvenanceSpec) -> Dic
     overlay_names = _discover_overlay_names(overlays_path)
 
     nodes: List[Dict] = []
+    overlay_manifest_errors: List[Dict] = []
 
     # Governance spine
     nodes.append(_node_dict(
@@ -125,6 +126,9 @@ def emit_manifest_from_repo(cfg: RealEmitterConfig, prov: ProvenanceSpec) -> Dic
         # declared runes (only if explicitly declared by JSON)
         om = load_overlay_manifest_json(overlay_dir)
         if om is None:
+            # Could be missing OR invalid schema. Record deterministically.
+            # We do not attempt to distinguish to avoid nondeterminism from exception text.
+            overlay_manifest_errors.append({"overlay": name, "reason": "missing_or_invalid_overlay_manifest"})
             continue
 
         declared = extract_declared_runes(om)
@@ -173,6 +177,7 @@ def emit_manifest_from_repo(cfg: RealEmitterConfig, prov: ProvenanceSpec) -> Dic
             "source_commit": prov.source_commit,
             "lint": {
                 "forbidden_crossings": forbidden,
+                "overlay_manifest_errors": overlay_manifest_errors,
                 "report": lint_report,
             },
         },
