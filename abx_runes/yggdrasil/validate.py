@@ -45,6 +45,9 @@ def validate_manifest(m: YggdrasilManifest) -> None:
     def link_allows_lane(frm: str, to: str, lp: str) -> bool:
         return any(lp in l.allowed_lanes for l in by_edge.get((frm, to), []))
 
+    def link_requires_evidence_tag(frm: str, to: str, tag: str) -> bool:
+        return any(tag in (l.evidence_required or ()) for l in by_edge.get((frm, to), []))
+
     # Lane + realm + existence rules over depends_on
     for n in m.nodes:
         for dep_id in n.depends_on:
@@ -52,18 +55,30 @@ def validate_manifest(m: YggdrasilManifest) -> None:
                 raise ValidationError(f"Node '{n.id}' depends_on missing node '{dep_id}'.")
             dep = nodes[dep_id]
 
+            lp = _lane_pair(dep.lane, n.lane)
+
             # Cross-realm requires explicit link
-            if dep.realm != n.realm and not has_link(dep.id, n.id):
-                raise ValidationError(
-                    f"Cross-realm dependency requires RuneLink: '{dep.id}'({dep.realm.value}) -> '{n.id}'({n.realm.value})."
-                )
+            if dep.realm != n.realm:
+                if not has_link(dep.id, n.id):
+                    raise ValidationError(
+                        f"Cross-realm dependency requires RuneLink: '{dep.id}'({dep.realm.value}) -> '{n.id}'({n.realm.value})."
+                    )
+                # Hard membrane: link must explicitly allow the actual lane-pair
+                if not link_allows_lane(dep.id, n.id, lp):
+                    raise ValidationError(
+                        f"Cross-realm RuneLink must allow lane-pair '{lp}': '{dep.id}' -> '{n.id}'."
+                    )
 
             # SHADOW -> FORECAST forbidden unless link explicitly allows it
             if dep.lane == Lane.SHADOW and n.lane == Lane.FORECAST:
-                lp = _lane_pair(dep.lane, n.lane)
                 if not link_allows_lane(dep.id, n.id, lp):
                     raise ValidationError(
                         f"Lane violation: SHADOW cannot feed FORECAST without RuneLink allowing '{lp}': '{dep.id}' -> '{n.id}'."
+                    )
+                # And must carry explicit evidence tag
+                if not link_requires_evidence_tag(dep.id, n.id, "EXPLICIT_SHADOW_FORECAST_BRIDGE"):
+                    raise ValidationError(
+                        f"shadow->forecast bridge requires evidence_required tag 'EXPLICIT_SHADOW_FORECAST_BRIDGE': '{dep.id}' -> '{n.id}'."
                     )
 
     _assert_acyclic_depends_on(nodes)

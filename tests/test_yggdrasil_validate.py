@@ -59,7 +59,13 @@ def test_allows_shadow_to_forecast_only_if_link_explicit():
         ),
         links=(
             RuneLink(id="link0", from_node="root", to_node="shadow.det", allowed_lanes=("neutral->shadow",)),
-            RuneLink(id="link1", from_node="shadow.det", to_node="forecast.pred", allowed_lanes=("shadow->forecast",)),
+            RuneLink(
+                id="link1",
+                from_node="shadow.det",
+                to_node="forecast.pred",
+                allowed_lanes=("shadow->forecast",),
+                evidence_required=("EXPLICIT_SHADOW_FORECAST_BRIDGE",),
+            ),
         ),
     )
     validate_manifest(m)
