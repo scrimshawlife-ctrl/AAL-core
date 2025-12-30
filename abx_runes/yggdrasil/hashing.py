@@ -9,25 +9,22 @@ def canonical_json_dumps(obj: Any) -> str:
     """
     Deterministic JSON serialization:
     - sorted keys
-    - no whitespace variance
+    - stable separators
     - UTF-8 safe
     """
     return json.dumps(obj, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
 
 
-def sha256_hex(text: str) -> str:
+def _sha256_hex(text: str) -> str:
     return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
 
 def hash_manifest_dict(manifest: Dict[str, Any]) -> str:
     """
-    Hash the manifest content *excluding* provenance.manifest_hash itself,
-    so we can set it deterministically.
-
-    This prevents self-referential hashing.
+    Hash manifest content excluding provenance.manifest_hash (self-hash-safe).
     """
-    m = json.loads(canonical_json_dumps(manifest))  # deep-copy via canonicalization
+    m = json.loads(canonical_json_dumps(manifest))  # deep copy
     prov = m.get("provenance", {})
-    prov["manifest_hash"] = ""  # blank it before hashing
+    prov["manifest_hash"] = ""
     m["provenance"] = prov
-    return sha256_hex(canonical_json_dumps(m))
+    return _sha256_hex(canonical_json_dumps(m))

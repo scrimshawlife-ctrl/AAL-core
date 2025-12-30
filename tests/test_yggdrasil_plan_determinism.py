@@ -1,8 +1,13 @@
-from aal_core.yggdrasil.schema import (
-    Lane, NodeKind, ProvenanceSpec, Realm,
-    YggdrasilManifest, YggdrasilNode, PlanOptions
+from abx_runes.yggdrasil.schema import (
+    Lane,
+    NodeKind,
+    PlanOptions,
+    ProvenanceSpec,
+    Realm,
+    YggdrasilManifest,
+    YggdrasilNode,
 )
-from aal_core.yggdrasil.plan import build_execution_plan
+from abx_runes.yggdrasil.plan import build_execution_plan
 
 
 def _prov():
@@ -16,7 +21,6 @@ def _prov():
 
 
 def test_plan_is_deterministic_under_input_order_variation():
-    # same graph, nodes shuffled
     nodes_a = (
         YggdrasilNode(id="root", kind=NodeKind.ROOT_POLICY, realm=Realm.MIDGARD, lane=Lane.NEUTRAL, authority_level=100, parent=None),
         YggdrasilNode(id="b", kind=NodeKind.RUNE, realm=Realm.MIDGARD, lane=Lane.NEUTRAL, authority_level=50, parent="root", depends_on=("a",)),

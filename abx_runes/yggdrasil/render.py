@@ -1,17 +1,15 @@
 from __future__ import annotations
 
-from typing import Dict, List, Tuple
+from typing import Dict, List
 
 from .schema import ExecutionPlan, YggdrasilManifest, YggdrasilNode
 
 
 def render_tree_view(m: YggdrasilManifest) -> str:
-    """
-    Governance spine: parent/child tree view (authority topology).
-    """
     idx = m.node_index()
     children: Dict[str, List[str]] = {n.id: [] for n in m.nodes}
     root_id = None
+
     for n in m.nodes:
         if n.parent is None:
             root_id = n.id
@@ -49,22 +47,17 @@ def _render_subtree(
 
 
 def render_veins_view(m: YggdrasilManifest) -> str:
-    """
-    Data veins: depends_on edges (DAG).
-    """
     idx = m.node_index()
     lines: List[str] = []
     for nid in sorted(idx.keys()):
         n = idx[nid]
-        if not n.depends_on:
-            continue
-        deps = ", ".join(sorted(n.depends_on))
-        lines.append(f"{nid} <- [{deps}]")
+        if n.depends_on:
+            lines.append(f"{nid} <- [{', '.join(sorted(n.depends_on))}]")
     return "\n".join(lines) if lines else "(no depends_on edges)"
 
 
 def render_plan(plan: ExecutionPlan) -> str:
-    lines = []
+    lines: List[str] = []
     lines.append("EXECUTION PLAN (deterministic)")
     lines.append(f"kept={len(plan.ordered_node_ids)} pruned={len(plan.pruned_node_ids)}")
     lines.append("")

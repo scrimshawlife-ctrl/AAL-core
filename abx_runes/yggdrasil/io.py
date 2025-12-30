@@ -1,11 +1,10 @@
 from __future__ import annotations
 
 import json
-from dataclasses import asdict
 from pathlib import Path
 from typing import Any, Dict
 
-from .hash import canonical_json_dumps, hash_manifest_dict
+from .hashing import canonical_json_dumps, hash_manifest_dict
 
 
 def load_manifest_dict(path: Path) -> Dict[str, Any]:
@@ -17,9 +16,6 @@ def save_manifest_dict(path: Path, manifest: Dict[str, Any]) -> None:
 
 
 def recompute_and_lock_hash(manifest: Dict[str, Any]) -> Dict[str, Any]:
-    """
-    Returns a new dict with provenance.manifest_hash set deterministically.
-    """
     m = json.loads(canonical_json_dumps(manifest))
     prov = m.setdefault("provenance", {})
     prov["manifest_hash"] = hash_manifest_dict(m)
@@ -32,5 +28,4 @@ def verify_hash(manifest: Dict[str, Any]) -> bool:
     expected = str(prov.get("manifest_hash", ""))
     if not expected:
         return False
-    actual = hash_manifest_dict(manifest)
-    return actual == expected
+    return hash_manifest_dict(manifest) == expected
