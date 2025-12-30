@@ -1,0 +1,45 @@
+name: yggdrasil-lint
+
+on:
+  pull_request:
+  push:
+    branches: ["main", "master"]
+
+jobs:
+  yggdrasil:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11"]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          if [ -f pyproject.toml ]; then pip install -e .; fi
+          pip install pytest
+
+      - name: Run tests
+        run: |
+          pytest -q
+
+      - name: Yggdrasil lint gate (manifest must be valid + hash-locked + no forbidden crossings)
+        run: |
+          python scripts/yggdrasil_lint.py --manifest yggdrasil.manifest.json
+
+      # Optional (stronger): regenerate and ensure repo-committed manifest matches.
+      # Enable only once your emitter is stable across CI environments.
+      # - name: Regenerate manifest and verify no drift
+      #   run: |
+      #     python scripts/gen_yggdrasil_manifest.py --repo-root . --out /tmp/yggdrasil.manifest.json --source-commit $GITHUB_SHA
+      #     diff -u yggdrasil.manifest.json /tmp/yggdrasil.manifest.json
