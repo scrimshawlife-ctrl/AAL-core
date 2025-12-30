@@ -17,6 +17,8 @@ from .schema import (
 from .hashing import canonical_json_dumps
 from .io import recompute_and_lock_hash
 from .overlay_introspect import load_overlay_manifest_json, extract_declared_runes
+from .linkgen import ensure_links_for_crossings
+from .lint import render_forbidden_crossings_report
 
 
 @dataclass(frozen=True)
@@ -153,6 +155,15 @@ def emit_manifest_from_repo(cfg: RealEmitterConfig, prov: ProvenanceSpec) -> Dic
                 promotion_state=PromotionState(str(r_override.get("promotion_state", "candidate"))),
             ))
 
+    # Build node index for link generation
+    nodes_by_id = {n["id"]: n for n in nodes}
+
+    # Auto-generate RuneLinks for cross-realm dependencies (safe auto-allow except shadow->forecast)
+    links, forbidden = ensure_links_for_crossings(nodes_by_id=nodes_by_id, existing_links=[])
+
+    # Attach a deterministic lint report into provenance (non-exec metadata)
+    lint_report = render_forbidden_crossings_report(forbidden)
+
     manifest = {
         "provenance": {
             "schema_version": prov.schema_version,
@@ -160,9 +171,13 @@ def emit_manifest_from_repo(cfg: RealEmitterConfig, prov: ProvenanceSpec) -> Dic
             "created_at": prov.created_at,
             "updated_at": prov.updated_at,
             "source_commit": prov.source_commit,
+            "lint": {
+                "forbidden_crossings": forbidden,
+                "report": lint_report,
+            },
         },
         "nodes": nodes,
-        "links": [],
+        "links": links,
     }
 
     # lock provenance.manifest_hash deterministically

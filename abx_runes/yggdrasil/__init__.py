@@ -31,6 +31,8 @@ from .hashing import canonical_json_dumps, hash_manifest_dict
 from .io import load_manifest_dict, save_manifest_dict, recompute_and_lock_hash, verify_hash
 from .emitter_real import RealEmitterConfig, emit_manifest_from_repo
 from .overlay_introspect import OverlayRuneDecl, load_overlay_manifest_json, extract_declared_runes
+from .linkgen import stable_edge_id, lane_pair, ensure_links_for_crossings
+from .lint import render_forbidden_crossings_report
 
 __all__ = [
     "Realm",
@@ -63,4 +65,8 @@ __all__ = [
     "OverlayRuneDecl",
     "load_overlay_manifest_json",
     "extract_declared_runes",
+    "stable_edge_id",
+    "lane_pair",
+    "ensure_links_for_crossings",
+    "render_forbidden_crossings_report",
 ]
