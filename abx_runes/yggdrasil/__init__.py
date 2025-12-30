@@ -29,6 +29,7 @@ from .plan import build_execution_plan
 from .render import render_tree_view, render_veins_view, render_plan
 from .hashing import canonical_json_dumps, hash_manifest_dict
 from .io import load_manifest_dict, save_manifest_dict, recompute_and_lock_hash, verify_hash
+from .emitter_real import RealEmitterConfig, emit_manifest_from_repo
 
 __all__ = [
     "Realm",
@@ -56,4 +57,6 @@ __all__ = [
     "save_manifest_dict",
     "recompute_and_lock_hash",
     "verify_hash",
+    "RealEmitterConfig",
+    "emit_manifest_from_repo",
 ]
