@@ -4,6 +4,7 @@ from typing import Dict, List, Set
 
 from .schema import ExecutionPlan, PlanOptions, PromotionState, YggdrasilManifest, YggdrasilNode
 from .validate import validate_manifest
+from .inputs_bundle import InputBundle
 
 
 def build_execution_plan(m: YggdrasilManifest, options: PlanOptions) -> ExecutionPlan:
@@ -16,6 +17,7 @@ def build_execution_plan(m: YggdrasilManifest, options: PlanOptions) -> Executio
     """
     validate_manifest(m)
     idx = m.node_index()
+    bundle = options.input_bundle if isinstance(options.input_bundle, InputBundle) else None
 
     def allowed(n: YggdrasilNode) -> bool:
         if options.include_realms is not None and n.realm not in options.include_realms:
@@ -31,6 +33,16 @@ def build_execution_plan(m: YggdrasilManifest, options: PlanOptions) -> Executio
         return True
 
     kept: Set[str] = {n.id for n in m.nodes if allowed(n)}
+
+    # not-computable pruning: required inputs missing from bundle
+    not_computable_reasons: Dict[str, str] = {}
+    if bundle is not None:
+        for nid in sorted(list(kept)):
+            n = idx[nid]
+            missing = bundle.missing_required(n.inputs)
+            if missing:
+                kept.remove(nid)
+                not_computable_reasons[nid] = f"missing_required_inputs:{','.join(missing)}"
 
     # closure prune: if you depend on something pruned, you get pruned too
     changed = True
@@ -49,6 +61,7 @@ def build_execution_plan(m: YggdrasilManifest, options: PlanOptions) -> Executio
         "kept_count": len(kept),
         "pruned_count": len(pruned),
         "toposort": "stable_by_node_id",
+        "not_computable": {k: not_computable_reasons[k] for k in sorted(not_computable_reasons.keys())},
     }
     return ExecutionPlan(
         ordered_node_ids=tuple(order),

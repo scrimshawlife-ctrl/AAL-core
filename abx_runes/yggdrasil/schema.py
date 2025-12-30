@@ -126,6 +126,9 @@ class PlanOptions:
     include_kinds: Optional[Tuple[NodeKind, ...]] = None
     allow_deprecated: bool = False
     allow_archived: bool = False
+    # Optional evidence/data availability for not-computable pruning
+    # Type is Any (InputBundle) to avoid circular import; deterministic anyway
+    input_bundle: Any = None
 
 
 @dataclass(frozen=True)

@@ -33,6 +33,7 @@ from .emitter_real import RealEmitterConfig, emit_manifest_from_repo
 from .overlay_introspect import OverlayRuneDecl, load_overlay_manifest_json, extract_declared_runes
 from .linkgen import stable_edge_id, lane_pair, ensure_links_for_crossings
 from .lint import render_forbidden_crossings_report
+from .inputs_bundle import InputBundle
 
 __all__ = [
     "Realm",
@@ -69,4 +70,5 @@ __all__ = [
     "lane_pair",
     "ensure_links_for_crossings",
     "render_forbidden_crossings_report",
+    "InputBundle",
 ]

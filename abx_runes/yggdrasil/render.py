@@ -64,6 +64,15 @@ def render_plan(plan: ExecutionPlan) -> str:
     lines.append("ORDER:")
     for i, nid in enumerate(plan.ordered_node_ids, 1):
         lines.append(f"{i:03d}. {nid}")
+
+    # Show not-computable nodes (pruned early due to missing inputs)
+    nc = dict(plan.planner_trace.get("not_computable", {}) or {})
+    if nc:
+        lines.append("")
+        lines.append("NOT_COMPUTABLE (pruned early):")
+        for nid in sorted(nc.keys()):
+            lines.append(f"- {nid}: {nc[nid]}")
+
     if plan.pruned_node_ids:
         lines.append("")
         lines.append("PRUNED:")
