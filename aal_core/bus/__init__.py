@@ -1,14 +1,14 @@
 """
-AAL-Core bus utilities (src tree).
+AAL-core Event Bus (package form)
 
-This module intentionally exports a minimal EventBus API used by tests, and the
-frame factory utilities.
+Historically this lived at `aal_core/bus.py`, but some tests expect
+`aal_core.bus.frame` to exist (i.e., `aal_core.bus` is a package).
 """
 
 from __future__ import annotations
 
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional
 
@@ -17,8 +17,10 @@ from .frame import make_frame
 
 class EventBus:
     """
-    Simple in-memory event bus for publishing/subscribing to events.
-    Also supports optional append-only JSONL event logging.
+    Simple event bus for publishing and subscribing to events.
+
+    Events are published to topics and can be subscribed to by handlers.
+    All events are also optionally logged to an append-only event log (JSONL).
     """
 
     def __init__(self, log_path: Optional[Path] = None):
@@ -36,7 +38,7 @@ class EventBus:
         event = {
             "topic": topic,
             "payload": payload,
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
         }
 
         if self._log_path:

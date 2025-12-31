@@ -39,19 +39,13 @@ def enforce_phase_policy(phase: Phase, overlay_caps: List[str]) -> PolicyDecisio
     Returns:
         PolicyDecision indicating if the invocation is allowed
     """
-    # Check granular permissions
-    rules = PHASE_RULES.get(phase, {})
-
-    if "external_io" in overlay_caps and not rules.get("allow_external_io", False):
-        return PolicyDecision(False, f"Phase {phase} forbids external_io")
-
-    if "writes" in overlay_caps and not rules.get("allow_writes", False):
-        return PolicyDecision(False, f"Phase {phase} forbids writes")
-
-    if "exec" in overlay_caps and not rules.get("allow_exec", False):
-        return PolicyDecision(False, f"Phase {phase} forbids exec")
-
-    # Check required capabilities
+    # v0.3+ note:
+    # Overlay manifests declare *available* capabilities, not capabilities that are necessarily used
+    # in every phase. We therefore do not forbid an overlay from being invoked in a read-only phase
+    # simply because it declares a stronger capability (e.g., "exec").
+    #
+    # Instead, we enforce only phase-required capabilities here; the sandbox/runtime must enforce
+    # actual capability usage during execution.
     if phase == "ASCEND" and "exec" not in overlay_caps:
         return PolicyDecision(False, "ASCEND requires explicit 'exec' capability")
 

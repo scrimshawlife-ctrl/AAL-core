@@ -1,0 +1,72 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "PortfolioTuningIR",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "portfolio_hash",
+    "source_cycle_id",
+    "mode",
+    "objective_weights",
+    "budgets",
+    "modules",
+    "reason_tags"
+  ],
+  "properties": {
+    "schema_version": { "const": "portfolio-tuning-ir/0.4" },
+    "portfolio_hash": { "type": "string" },
+    "source_cycle_id": { "type": "string" },
+    "mode": { "type": "string", "enum": ["shadow_tune", "applied_tune", "promoted_tune"] },
+    "objective_weights": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["w_latency", "w_cost", "w_error", "w_throughput"],
+      "properties": {
+        "w_latency": { "type": "number" },
+        "w_cost": { "type": "number" },
+        "w_error": { "type": "number" },
+        "w_throughput": { "type": "number" }
+      }
+    },
+    "budgets": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["max_total_cost_units", "max_total_latency_ms_p95", "max_changes_per_cycle"],
+      "properties": {
+        "max_total_cost_units": { "type": ["number", "null"] },
+        "max_total_latency_ms_p95": { "type": ["number", "null"] },
+        "max_changes_per_cycle": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "modules": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["module_id", "node_id", "tuning_ir", "selected_knobs", "estimated_impact", "total_score", "promotion_candidates"],
+        "properties": {
+          "module_id": { "type": "string" },
+          "node_id": { "type": "string" },
+          "tuning_ir": { "type": "object" },
+          "selected_knobs": { "type": "array", "items": { "type": "string" } },
+          "estimated_impact": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["delta_latency_ms_p95", "delta_cost_units", "delta_error_rate", "delta_throughput_per_s"],
+            "properties": {
+              "delta_latency_ms_p95": { "type": "number" },
+              "delta_cost_units": { "type": "number" },
+              "delta_error_rate": { "type": "number" },
+              "delta_throughput_per_s": { "type": "number" }
+            }
+          },
+          "total_score": { "type": "number" },
+          "promotion_candidates": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    },
+    "reason_tags": { "type": "array", "items": { "type": "string" } }
+  }
+}
+

@@ -4,6 +4,6 @@
   "status": "experimental",
   "phases": ["OPEN", "ALIGN", "ASCEND", "CLEAR", "SEAL"],
   "capabilities": ["analysis", "exec"],
-  "entrypoint": "python src/run.py",
+  "entrypoint": "python3 src/run.py",
   "timeout_ms": 2500
 }
