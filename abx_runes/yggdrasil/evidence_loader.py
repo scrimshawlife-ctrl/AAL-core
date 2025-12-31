@@ -7,6 +7,7 @@ from typing import Any, Dict, List, Tuple
 
 from .evidence_bundle import minimal_validate, verify_hash
 from .inputs_bundle import InputBundle
+from .linkgen import evidence_port_name
 
 
 @dataclass(frozen=True)
@@ -50,10 +51,17 @@ def load_evidence_bundles(paths: List[str]) -> EvidenceLoadResult:
             continue
         ok.append(pstr)
 
-    # Planner port: present iff at least one verified bundle exists.
-    present = {}
-    if ok:
-        present["explicit_shadow_forecast_bridge"] = "evidence_bundle"
+    # Planner ports: per-bridge evidence ports emitted from verified bundles.
+    present: Dict[str, str] = {}
+    for pstr in ok:
+        d = json.loads(Path(pstr).read_text(encoding="utf-8"))
+        bridges = d.get("bridges", []) or []
+        for b in bridges:
+            frm = str(b.get("from", "")).strip()
+            to = str(b.get("to", "")).strip()
+            if not frm or not to:
+                continue
+            present[evidence_port_name(frm, to)] = "evidence_bundle"
 
     return EvidenceLoadResult(
         bundle_paths_ok=tuple(sorted(ok)),

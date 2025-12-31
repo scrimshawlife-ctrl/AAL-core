@@ -199,6 +199,7 @@ Create a bundle:
 python scripts/evidence_pack.py new \
   --out evidence/my_bridge.bundle.json \
   --url "https://example.com/report" \
+  --bridge "hel.det->asg.pred" \
   --claim "This detector output is calibrated + safe to influence forecast under gate X." \
   --confidence 0.7
 ```

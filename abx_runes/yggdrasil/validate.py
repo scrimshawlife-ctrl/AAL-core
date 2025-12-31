@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Dict, List, Set, Tuple
 
 from .schema import Lane, RuneLink, YggdrasilManifest, YggdrasilNode
+from .linkgen import evidence_port_name
 
 
 class ValidationError(Exception):
@@ -89,9 +90,10 @@ def validate_manifest(m: YggdrasilManifest) -> None:
                         f"shadow->forecast bridge requires evidence_required tag 'EXPLICIT_SHADOW_FORECAST_BRIDGE': '{dep.id}' -> '{n.id}'."
                     )
                 # And must require explicit evidence port (structural contract)
-                if not link_requires_port(dep.id, n.id, "explicit_shadow_forecast_bridge", "evidence_bundle"):
+                required_name = evidence_port_name(dep.id, n.id)
+                if not link_requires_port(dep.id, n.id, required_name, "evidence_bundle"):
                     raise ValidationError(
-                        f"shadow->forecast bridge requires required_evidence_ports including explicit_shadow_forecast_bridge:evidence_bundle: '{dep.id}' -> '{n.id}'."
+                        f"shadow->forecast bridge requires required_evidence_ports including {required_name}:evidence_bundle: '{dep.id}' -> '{n.id}'."
                     )
 
     _assert_acyclic_depends_on(nodes)

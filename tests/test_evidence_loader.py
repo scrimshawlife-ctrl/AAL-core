@@ -6,11 +6,12 @@ from tempfile import TemporaryDirectory
 
 from abx_runes.yggdrasil.evidence_bundle import SCHEMA_VERSION, lock_hash
 from abx_runes.yggdrasil.evidence_loader import load_evidence_bundles
+from abx_runes.yggdrasil.linkgen import evidence_port_name
 
 
 def test_loader_sets_bridge_port_when_any_verified_bundle_present():
     """
-    Evidence loader sets explicit_shadow_forecast_bridge port when at least one verified bundle is present.
+    Evidence loader sets per-bridge evidence port when at least one verified bundle is present.
     """
     with TemporaryDirectory() as td:
         p = Path(td) / "b.json"
@@ -21,13 +22,15 @@ def test_loader_sets_bridge_port_when_any_verified_bundle_present():
             "sources": [{"kind": "url", "ref": "x", "digest": "y", "observed_at": "t"}],
             "claims": [{"id": "claim.001", "statement": "s", "confidence": 0.6, "supports": ["x"]}],
             "calibration_refs": [],
+            "bridges": [{"from": "hel.det", "to": "asg.pred"}],
         }
         p.write_text(json.dumps(lock_hash(b)), encoding="utf-8")
 
         res = load_evidence_bundles([str(p)])
         assert res.bundle_paths_ok == (str(p),)
         assert res.bundle_paths_bad == ()
-        assert res.input_bundle.present.get("explicit_shadow_forecast_bridge") == "evidence_bundle"
+        expected_port = evidence_port_name("hel.det", "asg.pred")
+        assert res.input_bundle.present.get(expected_port) == "evidence_bundle"
 
 
 def test_loader_rejects_invalid_bundle():
@@ -43,8 +46,8 @@ def test_loader_rejects_invalid_bundle():
         assert len(res.bundle_paths_bad) == 1
         assert res.bundle_paths_bad[0]["path"] == str(p)
         assert res.bundle_paths_bad[0]["reason"] == "invalid_json"
-        # No port should be present
-        assert "explicit_shadow_forecast_bridge" not in res.input_bundle.present
+        # No ports should be present (invalid bundle)
+        assert res.input_bundle.present == {}
 
 
 def test_loader_rejects_tampered_bundle():
@@ -71,8 +74,8 @@ def test_loader_rejects_tampered_bundle():
         assert len(res.bundle_paths_bad) == 1
         assert res.bundle_paths_bad[0]["path"] == str(p)
         assert res.bundle_paths_bad[0]["reason"] == "hash_mismatch"
-        # No port should be present
-        assert "explicit_shadow_forecast_bridge" not in res.input_bundle.present
+        # No ports should be present (tampered bundle)
+        assert res.input_bundle.present == {}
 
 
 def test_loader_handles_missing_file():
@@ -84,5 +87,5 @@ def test_loader_handles_missing_file():
     assert len(res.bundle_paths_bad) == 1
     assert res.bundle_paths_bad[0]["path"] == "/nonexistent/path.json"
     assert res.bundle_paths_bad[0]["reason"] == "missing"
-    # No port should be present
-    assert "explicit_shadow_forecast_bridge" not in res.input_bundle.present
+    # No ports should be present (missing file)
+    assert res.input_bundle.present == {}

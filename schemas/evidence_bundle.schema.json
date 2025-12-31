@@ -48,6 +48,18 @@
         },
         "required": ["kind", "ref", "digest"]
       }
+    },
+    "bridges": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "from": { "type": "string", "minLength": 1 },
+          "to": { "type": "string", "minLength": 1 }
+        },
+        "required": ["from", "to"]
+      }
     }
   },
   "required": ["schema_version", "created_at", "bundle_hash", "sources", "claims"]

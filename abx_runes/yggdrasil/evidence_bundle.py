@@ -51,3 +51,9 @@ def minimal_validate(bundle: Dict[str, Any]) -> None:
         raise ValueError("sources must be an array.")
     if not isinstance(bundle.get("claims", None), list):
         raise ValueError("claims must be an array.")
+    if "bridges" in bundle and bundle["bridges"] is not None:
+        if not isinstance(bundle["bridges"], list):
+            raise ValueError("bridges must be an array.")
+        for b in bundle["bridges"]:
+            if not isinstance(b, dict) or not str(b.get("from", "")).strip() or not str(b.get("to", "")).strip():
+                raise ValueError("Each bridge must be {from,to} non-empty strings.")

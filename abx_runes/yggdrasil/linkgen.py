@@ -16,6 +16,14 @@ def lane_pair(src_lane: str, dst_lane: str) -> str:
     return f"{src_lane}->{dst_lane}"
 
 
+def evidence_port_name(from_node: str, to_node: str) -> str:
+    """
+    Deterministic evidence port name for a specific bridge.
+    Returns: evidence.<link_id> (e.g., evidence.link.a1b2c3d4e5f6)
+    """
+    return f"evidence.{stable_edge_id(from_node, to_node)}"
+
+
 def ensure_links_for_crossings(
     *,
     nodes_by_id: Dict[str, Dict],
@@ -88,7 +96,7 @@ def ensure_links_for_crossings(
                 })
                 link["evidence_required"] = ["EXPLICIT_SHADOW_FORECAST_BRIDGE"]
                 link["required_evidence_ports"] = [
-                    {"name": "explicit_shadow_forecast_bridge", "dtype": "evidence_bundle", "required": True}
+                    {"name": evidence_port_name(from_id, to_id), "dtype": "evidence_bundle", "required": True}
                 ]
 
             out_links.append(link)

@@ -70,6 +70,19 @@ def cmd_new(args: argparse.Namespace) -> int:
             "supports": [s["ref"] for s in sources],
         })
 
+    bridges = []
+    for edge in args.bridge:
+        if "->" not in edge:
+            print(f"Invalid --bridge '{edge}' (expected from->to)")
+            return 2
+        frm, to = edge.split("->", 1)
+        frm = frm.strip()
+        to = to.strip()
+        if not frm or not to:
+            print(f"Invalid --bridge '{edge}' (empty from/to)")
+            return 2
+        bridges.append({"from": frm, "to": to})
+
     bundle = {
         "schema_version": SCHEMA_VERSION,
         "created_at": now_utc(),
@@ -77,6 +90,7 @@ def cmd_new(args: argparse.Namespace) -> int:
         "sources": sorted(sources, key=lambda x: (x["kind"], x["ref"], x["digest"])),
         "claims": claims,
         "calibration_refs": [],
+        "bridges": sorted(bridges, key=lambda x: (x["from"], x["to"])),
     }
     bundle = lock_hash(bundle)
 
@@ -116,6 +130,7 @@ def main() -> int:
     ap_new.add_argument("--file", action="append", default=[])
     ap_new.add_argument("--commit", action="append", default=[])
     ap_new.add_argument("--note", action="append", default=[])
+    ap_new.add_argument("--bridge", action="append", default=[], help="Bridge edge to unlock: from->to (repeatable)")
     ap_new.add_argument("--claim", action="append", default=[], required=True)
     ap_new.add_argument("--confidence", default="0.6")
     ap_new.set_defaults(func=cmd_new)
