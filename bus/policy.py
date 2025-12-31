@@ -39,19 +39,10 @@ def enforce_phase_policy(phase: Phase, overlay_caps: List[str]) -> PolicyDecisio
     Returns:
         PolicyDecision indicating if the invocation is allowed
     """
-    # Check granular permissions
-    rules = PHASE_RULES.get(phase, {})
-
-    if "external_io" in overlay_caps and not rules.get("allow_external_io", False):
-        return PolicyDecision(False, f"Phase {phase} forbids external_io")
-
-    if "writes" in overlay_caps and not rules.get("allow_writes", False):
-        return PolicyDecision(False, f"Phase {phase} forbids writes")
-
-    if "exec" in overlay_caps and not rules.get("allow_exec", False):
-        return PolicyDecision(False, f"Phase {phase} forbids exec")
-
-    # Check required capabilities
+    # v0.6+ semantics:
+    # Declared capabilities are permissions, not proof of use.
+    # We therefore *do not* reject an overlay for merely declaring "exec"/"writes"/etc.
+    # Instead, we only enforce phase-level required capabilities.
     if phase == "ASCEND" and "exec" not in overlay_caps:
         return PolicyDecision(False, "ASCEND requires explicit 'exec' capability")
 

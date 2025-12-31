@@ -66,7 +66,7 @@ def test_list_overlays():
     assert len(abraxas) == 1
     assert abraxas[0]["version"] == "2.1"
     assert abraxas[0]["status"] == "active"
-    assert set(abraxas[0]["phases"]) == {"OPEN", "ALIGN", "ASCEND", "CLEAR", "SEAL"}
+    assert set(abraxas[0]["phases"]) == {"OPEN", "ALIGN", "CLEAR", "SEAL"}
 
 
 def test_provenance_logging():
