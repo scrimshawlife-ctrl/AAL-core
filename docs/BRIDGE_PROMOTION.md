@@ -35,7 +35,12 @@ Collect metrics run digests and attach them under `calibration_refs` in the bund
 Update the evidence bundle by adding:
 - calibration_refs entries with digests for the metrics runs / goldens
 
-Then re-lock its hash (using the same bundle lock logic).
+Then re-lock its hash:
+
+```bash
+python scripts/evidence_relock.py --bundle evidence/bridge_<from>_<to>.bundle.json
+python scripts/evidence_pack.py verify --bundle evidence/bridge_<from>_<to>.bundle.json
+```
 
 ## 4) ALLOW (manual, explicit)
 
