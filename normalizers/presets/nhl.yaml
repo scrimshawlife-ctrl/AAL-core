@@ -1,0 +1,44 @@
+# NHL Sport Normalizer (Proof Case)
+# Version 1.0
+
+schema_version: "1.0"
+sport_id: "NHL"
+version: "1.0"
+
+opportunity:
+  unit: "time_on_ice"
+  stability_score: 0.78
+
+usage:
+  unit: "shot_attempts"
+  concentration_score: 0.64
+
+continuity:
+  event_rate: 55
+  distribution_shape: "skewed"
+
+volatility:
+  per_event_variance: 0.22
+  game_level_variance: 0.35
+
+failure_modes:
+  bad_script_definition: "trailing after 2 periods"
+  bad_script_effects:
+    suppresses:
+      - "goals"
+    inflates:
+      - "shots_on_goal"
+
+stat_map:
+  shots_on_goal:
+    primitive: "opportunity"
+    survivability_score: 0.76
+  points:
+    primitive: "event"
+    survivability_score: 0.42
+
+meta:
+  notes: "NHL exhibits higher variance and more skewed distributions than NBA. Event rates are lower due to scoring dynamics."
+  sources:
+    - "NHL API data 2019-2024"
+    - "Hockey analytics research"
