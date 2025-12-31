@@ -1,4 +1,4 @@
-.PHONY: yggdrasil yggdrasil-lint evidence-relock test
+.PHONY: yggdrasil yggdrasil-lint bridge-patch-lint evidence-relock test
 
 # Override if needed:
 PY ?= python
@@ -8,6 +8,9 @@ yggdrasil:
 
 yggdrasil-lint:
 	PYTHONPATH=. $(PY) scripts/yggdrasil_lint.py --manifest yggdrasil.manifest.json
+
+bridge-patch-lint:
+	PYTHONPATH=. $(PY) scripts/bridge_patch_lint.py --manifest yggdrasil.manifest.json
 
 evidence-relock:
 	@echo "Usage: make evidence-relock BUNDLE=path/to.bundle.json"

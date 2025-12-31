@@ -35,7 +35,7 @@ def test_bridge_apply_semantics_minimal():
     }
 
     # Apply inline using the same core functions as the script
-    from scripts.bridge_apply import apply_patch_to_link, relock_manifest_hash, find_link_index
+    from abx_runes.yggdrasil.bridge_apply_core import apply_patch_to_link, relock_manifest_hash, find_link_index
     idx = find_link_index(manifest, patch)
     manifest["links"][idx] = apply_patch_to_link(manifest["links"][idx], patch)
     manifest2 = relock_manifest_hash(manifest)
