@@ -11,6 +11,7 @@
   },
   "entrypoint": "python src/run.py",
   "timeout_ms": 2500,
+  "py_exports": ["abraxas.exports"],
   "schema_version": "yggdrasil-overlay/0.1",
   "overlay": {
     "id": "abraxas",

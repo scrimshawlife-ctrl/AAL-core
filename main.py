@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-AAL-Core: Append-only overlay bus with provenance logging
+AAL-Core: Append-only overlay bus with provenance logging + Dynamic Function Discovery
 """
 import os
 import json
@@ -14,7 +14,11 @@ from datetime import datetime
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 
-from bus import load_overlays, enforce_phase_policy
+# AAL-core services
+from aal_core.bus import EventBus
+from aal_core.services.fn_registry import FunctionRegistry, bind_fn_registry_routes
+from bus import enforce_phase_policy
+
 
 app = FastAPI(title="AAL-Core", version="1.0.0")
 
@@ -22,9 +26,22 @@ app = FastAPI(title="AAL-Core", version="1.0.0")
 OVERLAYS_DIR = Path(__file__).parent / ".aal" / "overlays"
 LOGS_DIR = Path(__file__).parent / "logs"
 PROVENANCE_LOG = LOGS_DIR / "provenance.jsonl"
+EVENTS_LOG = LOGS_DIR / "events.jsonl"
 
 # Ensure logs directory exists
 LOGS_DIR.mkdir(exist_ok=True)
+
+# Initialize event bus
+event_bus = EventBus(log_path=EVENTS_LOG)
+
+# Initialize function registry
+fn_registry = FunctionRegistry(
+    bus=event_bus,
+    overlays_root=str(OVERLAYS_DIR)
+)
+
+# Build initial catalog
+fn_registry.tick()
 
 
 class InvokeRequest(BaseModel):
@@ -43,14 +60,14 @@ class InvokeResponse(BaseModel):
     payload_hash: str
 
 
-def get_overlay_info(overlay_name: str):
-    """Load overlay manifest using bus registry."""
-    overlays = load_overlays(OVERLAYS_DIR)
-
-    if overlay_name not in overlays:
+def load_overlay_manifest(overlay_name: str) -> Dict[str, Any]:
+    """Load and parse overlay manifest.json"""
+    manifest_path = OVERLAYS_DIR / overlay_name / "manifest.json"
+    if not manifest_path.exists():
         raise HTTPException(404, f"Overlay '{overlay_name}' not found")
 
-    return overlays[overlay_name]  # Returns (Path, OverlayManifest, hash)
+    with open(manifest_path) as f:
+        return json.load(f)
 
 
 def compute_payload_hash(data: Dict[str, Any]) -> str:
@@ -66,21 +83,21 @@ def append_jsonl(path: Path, event: Dict[str, Any]) -> None:
 
 
 def invoke_overlay_subprocess(
-    overlay_dir: Path,
     overlay_name: str,
-    manifest,  # OverlayManifest
+    manifest: Dict[str, Any],
     phase: str,
     data: Dict[str, Any],
     request_id: str
 ) -> Dict[str, Any]:
     """Execute overlay via subprocess with timeout."""
-    entrypoint = manifest.entrypoint
-    timeout_ms = manifest.timeout_ms
+    overlay_dir = OVERLAYS_DIR / overlay_name
+    entrypoint = manifest.get("entrypoint", "python src/run.py")
+    timeout_ms = manifest.get("timeout_ms", 5000)
 
     # Build overlay request
     overlay_request = {
         "overlay": overlay_name,
-        "version": manifest.version,
+        "version": manifest.get("version"),
         "phase": phase,
         "request_id": request_id,
         "timestamp_ms": int(time.time() * 1000),
@@ -150,19 +167,21 @@ def root():
 @app.get("/overlays")
 def list_overlays():
     """List available overlays."""
-    overlays_data = load_overlays(OVERLAYS_DIR)
     overlays = []
-
-    for name, (_, manifest, _) in overlays_data.items():
-        overlays.append({
-            "name": manifest.name,
-            "version": manifest.version,
-            "status": manifest.status,
-            "phases": manifest.phases,
-            "capabilities": manifest.capabilities,
-            "op_policy": manifest.op_policy
-        })
-
+    if OVERLAYS_DIR.exists():
+        for overlay_dir in OVERLAYS_DIR.iterdir():
+            if overlay_dir.is_dir():
+                manifest_path = overlay_dir / "manifest.json"
+                if manifest_path.exists():
+                    with open(manifest_path) as f:
+                        manifest = json.load(f)
+                    overlays.append({
+                        "name": overlay_dir.name,
+                        "version": manifest.get("version"),
+                        "status": manifest.get("status"),
+                        "phases": manifest.get("phases", []),
+                        "capabilities": manifest.get("capabilities", [])
+                    })
     return {"overlays": overlays}
 
 
@@ -172,52 +191,25 @@ def invoke_overlay(overlay_name: str, req: InvokeRequest):
     # Generate request ID
     request_id = f"{overlay_name}-{int(time.time() * 1000)}"
 
-    # Load overlay manifest using bus registry
-    overlay_dir, manifest, mf_hash = get_overlay_info(overlay_name)
+    # Load manifest
+    manifest = load_overlay_manifest(overlay_name)
 
     # Validate phase
-    if req.phase not in manifest.phases:
+    valid_phases = manifest.get("phases", [])
+    if req.phase not in valid_phases:
         raise HTTPException(
             400,
-            f"Invalid phase '{req.phase}' for overlay '{overlay_name}'. Valid: {manifest.phases}"
+            f"Invalid phase '{req.phase}' for overlay '{overlay_name}'. Valid: {valid_phases}"
         )
 
-<<<<<<< HEAD
-    # Track op and required capabilities for ASCEND enforcement
-    op = None
-    op_required_caps = []
-
-    # NEW: ASCEND op-policy enforcement
-    if req.phase == "ASCEND":
-        # Enforce op allowlist from manifest (trusted)
-        op = req.data.get("op")
-        if not isinstance(op, str) or not op:
-            raise HTTPException(status_code=400, detail="ASCEND requires payload.data.op (string)")
-
-        if op not in manifest.op_policy:
-            raise HTTPException(status_code=403, detail=f"ASCEND op not allowed by manifest: {op}")
-
-        op_required_caps = manifest.op_policy.get(op, [])
-
-        # Enforce: overlay must declare any capability required by the op
-        missing = [c for c in op_required_caps if c not in manifest.capabilities]
-        if missing:
-            raise HTTPException(
-                status_code=403,
-                detail=f"ASCEND op '{op}' requires undeclared capabilities: {missing}"
-            )
-
-    # Phase policy enforcement (belt & suspenders: overlay caps + op-required caps)
-    decision = enforce_phase_policy(req.phase, manifest.capabilities + list(op_required_caps))
-    if not decision.ok:
-        raise HTTPException(status_code=403, detail=decision.reason)
-=======
     # Enforce phase policy
-    overlay_caps = manifest.get("capabilities", [])
-    policy_decision = enforce_phase_policy(req.phase, overlay_caps)
+    capabilities = manifest.get("capabilities", [])
+    policy_decision = enforce_phase_policy(req.phase, capabilities)
     if not policy_decision.ok:
-        raise HTTPException(403, policy_decision.reason)
->>>>>>> origin/claude/add-phase-policy-enforcement-zE1qq
+        raise HTTPException(
+            403,
+            f"Policy violation: {policy_decision.reason}"
+        )
 
     # Compute payload hash for provenance
     payload_hash = compute_payload_hash(req.data)
@@ -228,7 +220,6 @@ def invoke_overlay(overlay_name: str, req: InvokeRequest):
     # Execute overlay
     start_ms = int(time.time() * 1000)
     overlay_response = invoke_overlay_subprocess(
-        overlay_dir,
         overlay_name,
         manifest,
         req.phase,
@@ -242,15 +233,12 @@ def invoke_overlay(overlay_name: str, req: InvokeRequest):
         "request_id": request_id,
         "timestamp_ms": start_ms,
         "overlay": overlay_name,
-        "version": manifest.version,
+        "version": manifest.get("version"),
         "phase": req.phase,
         "payload_hash": payload_hash,
-        "manifest_hash": mf_hash,
         "ok": overlay_response.get("ok"),
         "duration_ms": end_ms - start_ms,
-        "error": overlay_response.get("error"),
-        "op": op,
-        "op_required_caps": op_required_caps
+        "error": overlay_response.get("error")
     }
 
     # Dev-only: store full payload for exact replay
@@ -283,6 +271,35 @@ def get_provenance(limit: int = 100):
 
     events = [json.loads(line) for line in lines[-limit:]]
     return {"events": events, "count": len(events)}
+
+
+@app.get("/events")
+def get_events(limit: int = 100):
+    """Retrieve recent bus events."""
+    events = event_bus.get_recent_events(limit=limit)
+    return {"events": events, "count": len(events)}
+
+
+@app.post("/fn/rebuild")
+def rebuild_fn_catalog():
+    """
+    Manually trigger function catalog rebuild.
+
+    Returns updated catalog hash and count.
+    """
+    fn_registry.tick()
+    snapshot = fn_registry.get_snapshot()
+
+    return {
+        "ok": True,
+        "catalog_hash": snapshot.catalog_hash,
+        "count": snapshot.count,
+        "generated_at_unix": snapshot.generated_at_unix
+    }
+
+
+# Bind function registry routes
+bind_fn_registry_routes(app, fn_registry)
 
 
 if __name__ == "__main__":
