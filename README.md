@@ -1,58 +1,139 @@
-# AAL-core
-
-AAL-Core engine for Tachyon deployment with ABX-Runes Memory Governance Layer.
-
-## Overview
-
-AAL-Core is a comprehensive architecture abstraction layer that provides deterministic, modular systems for memory governance, overlay orchestration, and dynamic function discovery.
-
-## Key Features
-
-### Integrated Systems (All Branches Merged ✓)
-
-- **ABX-Runes Memory Governance** - Declarative memory contracts with automatic degradation
-- **YGGDRASIL-IR Metadata Layer** - Evidence bundles, bridge promotion, and provenance tracking
-- **Phase Policy Enforcement** - Granular capability-based access control with phase-aware permissions
-- **BeatOven Metrics Integration** - Catalog integration for metrics aggregation
-- **Dynamic Function Discovery (DFD)** - Multi-source function registry with hash-based change detection
-- **Oracle-Runes Integration** - SDS, IPL, ADD operators with drift tracking and provenance
-- **Abraxas Overlay System** - Analysis and prediction modules with capability enforcement
-- **Alignment Core** - Constitutional layer with regime-based governance and objective firewall
-- **Event Bus** - Provenance logging with deterministic replay capability
-- **Sandboxed Execution** - Subprocess isolation with timeout enforcement
-
-### Core Capabilities
-
-AAL-Core provides:
-
-- **Runic memory contracts** - Declarative memory limits and behavior specifications
-- **Live RAM stress monitoring** - Real-time memory pressure detection (0-1 scalar)
-- **Automatic degradation** - Graceful fallback when RAM becomes scarce
-- **KV cache management** - Policy-driven cache sizing and eviction
-- **Multi-tier memory** - Support for LOCAL (DRAM), EXTENDED (CXL), and COLD (disk) tiers
-
-## Architecture
-
 ```
-abx_runes/
-├── memory_runes.py          # Rune schema + parser
-├── ram_stress.py            # Live RAM stress signal
-└── scheduler_memory_layer.py # Enforcement hooks
+   _____          _             _____
+  / ____|        | |           / ____|
+ | (___    __ _  | |  ______  | |      ___    _ __   ___
+  \___ \  / _` | | | |______| | |     / _ \  | '__| / _ \
+  ____) || (_| | | |          | |____| (_) | | |   |  __/
+ |_____/  \__,_| |_|           \_____|\___/  |_|    \___|
 
-tests/
-└── test_memory_runes.py     # Basic hardening tests
-
-examples/
-└── memory_governance_example.py # Usage demonstration
+    Architecture Abstraction Layer - Core Engine
 ```
 
-## Quick Start
+<div align="center">
 
-### 1. Define a Memory Profile
+**AAL-Core** • Deterministic Memory Governance • Overlay Orchestration • Dynamic Function Discovery
+
+[![Status](https://img.shields.io/badge/status-active-success.svg)]()
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)]()
+[![Python](https://img.shields.io/badge/python-3.11+-blue.svg)]()
+
+[Features](#-key-features) • [Quick Start](#-quick-start) • [Documentation](#-documentation) • [Architecture](#-architecture)
+
+---
+
+</div>
+
+## 🌟 Overview
+
+**AAL-Core** is a comprehensive architecture abstraction layer providing deterministic, modular systems for memory governance, overlay orchestration, and dynamic function discovery. Built for high-performance AI workloads with provenance tracking and capability enforcement.
+
+## 🚀 Key Features
+
+### ✅ Integrated Systems (All Branches Merged)
+
+<table>
+<tr>
+<td width="50%">
+
+**Core Systems**
+- 🧠 **ABX-Runes Memory Governance**
+  - Declarative memory contracts
+  - Automatic degradation under pressure
+  - Multi-tier memory support
+- 🌳 **YGGDRASIL-IR Metadata Layer**
+  - Evidence bundles & provenance
+  - Bridge promotion workflows
+  - Hash-locked artifacts
+
+</td>
+<td width="50%">
+
+**Execution & Discovery**
+- 🔐 **Phase Policy Enforcement**
+  - Granular capability control
+  - Phase-aware permissions
+- 🔍 **Dynamic Function Discovery**
+  - Multi-source registry
+  - Hash-based change detection
+  - Event-driven updates
+
+</td>
+</tr>
+<tr>
+<td width="50%">
+
+**Integration & Analytics**
+- 📊 **BeatOven Metrics Integration**
+  - Catalog aggregation
+  - Performance tracking
+- 🔮 **Oracle-Runes Integration**
+  - SDS, IPL, ADD operators
+  - Drift tracking & provenance
+
+</td>
+<td width="50%">
+
+**Security & Alignment**
+- 🛡️ **Abraxas Overlay System**
+  - Analysis & prediction modules
+  - Capability enforcement
+- ⚖️ **Alignment Core**
+  - Constitutional governance
+  - Regime-based control
+  - Objective firewall
+
+</td>
+</tr>
+</table>
+
+### 🎯 Core Capabilities
+
+```mermaid
+graph LR
+    A[Memory Governance] --> E[AAL-Core]
+    B[Overlay System] --> E
+    C[Function Registry] --> E
+    D[Policy Enforcement] --> E
+    E --> F[Provenance Log]
+    E --> G[Sandboxed Execution]
+    E --> H[Event Bus]
+```
+
+| Capability | Description | Status |
+|------------|-------------|--------|
+| **Runic Memory Contracts** | Declarative memory limits with behavior specs | ✅ Active |
+| **RAM Stress Monitoring** | Real-time memory pressure (0-1 scalar) | ✅ Active |
+| **Automatic Degradation** | Graceful fallback under resource constraints | ✅ Active |
+| **KV Cache Management** | Policy-driven sizing and eviction | ✅ Active |
+| **Multi-tier Memory** | LOCAL (DRAM) / EXTENDED (CXL) / COLD (disk) | ✅ Active |
+| **Sandboxed Execution** | Subprocess isolation with timeout | ✅ Active |
+| **Provenance Logging** | Deterministic replay capability | ✅ Active |
+
+## 📦 Quick Start
+
+### Installation
+
+```bash
+# Clone the repository
+git clone https://github.com/scrimshawlife-ctrl/AAL-core.git
+cd AAL-core
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Start the AAL-Core bus
+uvicorn main:app --reload
+```
+
+### Basic Usage
+
+#### 1. Memory Governance with ABX-Runes
 
 ```python
 from abx_runes.memory_runes import parse_memory_profile
+from abx_runes.scheduler_memory_layer import JobContext, MemoryAwareScheduler
 
+# Define memory profile
 RUNE_TEXT = """
 MEM[SOFT=2048,HARD=4096,VOL=MED];
 KV[CAP=0.2,POLICY=WINDOW,PURGE=ON_STRESS];
@@ -68,67 +149,162 @@ DEGRADE{
 """
 
 profile = parse_memory_profile(RUNE_TEXT)
-```
 
-### 2. Wrap Your Scheduler
-
-```python
-from abx_runes.scheduler_memory_layer import JobContext, MemoryAwareScheduler
-
+# Create scheduler
 def run_job(job: JobContext):
-    # Your existing job execution logic
-    # Read job.metadata for degradation parameters:
-    # - kv_shrink_factor
-    # - max_context_tokens
-    # - disabled_features
-    # - batch_mode
-    # - offload_tier
-    ...
+    # Your job logic here
+    pass
 
-mem_scheduler = MemoryAwareScheduler(run_job)
+scheduler = MemoryAwareScheduler(run_job)
+
+# Submit job
+job = JobContext(job_id="oracle-001", profile=profile, metadata={})
+result = scheduler.submit(job)
 ```
 
-### 3. Submit Jobs
+#### 2. Invoke an Overlay
 
-```python
-job = JobContext(
-    job_id="oracle-001",
-    profile=profile,
-    metadata={}
-)
-
-result = mem_scheduler.submit(job)
+```bash
+curl -X POST "http://127.0.0.1:8000/invoke/abraxas" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "phase": "CLEAR",
+    "data": {
+      "prompt": "Analyze system state",
+      "intent": "diagnostic"
+    }
+  }' | jq .
 ```
 
-## Rune Syntax
+#### 3. Query Function Registry
 
-### Memory Rune (Required)
+```bash
+# Get current function catalog
+curl http://127.0.0.1:8000/functions | jq .
+
+# Force refresh and detect changes
+curl -X POST http://127.0.0.1:8000/functions/refresh | jq .
+
+# View event bus history
+curl http://127.0.0.1:8000/events?limit=20 | jq .
+```
+
+## 🏗️ Architecture
+
+### High-Level Overview
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                         AAL-Core Bus                         │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐      │
+│  │   Overlay    │  │   Function   │  │    Event     │      │
+│  │   Registry   │  │   Registry   │  │     Bus      │      │
+│  └──────────────┘  └──────────────┘  └──────────────┘      │
+│          │                  │                  │             │
+│          └──────────────────┴──────────────────┘             │
+│                          │                                   │
+│                ┌─────────▼─────────┐                        │
+│                │  Policy Engine    │                        │
+│                │ (Phase Enforcement)│                       │
+│                └─────────┬─────────┘                        │
+│                          │                                   │
+│                ┌─────────▼─────────┐                        │
+│                │ Sandbox Executor  │                        │
+│                └─────────┬─────────┘                        │
+│                          │                                   │
+└──────────────────────────┼───────────────────────────────────┘
+                           │
+            ┌──────────────┼──────────────┐
+            │              │              │
+     ┌──────▼──────┐ ┌────▼────┐ ┌──────▼──────┐
+     │   Abraxas   │ │  Psy-Fi │ │ Custom      │
+     │   Overlay   │ │ Overlay │ │ Overlays    │
+     └─────────────┘ └─────────┘ └─────────────┘
+```
+
+### Directory Structure
+
+<details>
+<summary>📁 Click to expand full structure</summary>
+
+```
+AAL-core/
+├── 📂 .aal/                           # Overlay definitions
+│   └── overlays/
+│       ├── abraxas/                   # Analysis & prediction
+│       ├── abraxas_exec/             # Exec-capable variant
+│       └── psyfi/                    # Simulation overlay
+├── 📂 aal_core/                      # Core AAL modules
+│   ├── alignment/                    # Constitutional layer
+│   ├── bus/                          # Event bus & orchestration
+│   ├── integrations/                 # External integrations
+│   ├── registry/                     # Function registry
+│   └── services/                     # Core services
+├── 📂 abraxas/                       # Abraxas implementation
+│   ├── oracle/                       # Oracle engine
+│   └── runes/                        # Rune operators
+├── 📂 abx_runes/                     # Memory governance
+├── 📂 alignment_core/                # Alignment system
+├── 📂 bus/                           # Bus infrastructure
+│   ├── overlay_registry.py           # Manifest loading
+│   ├── policy.py                     # Policy enforcement
+│   └── sandbox.py                    # Sandboxed execution
+├── 📂 engines/                       # State management
+├── 📂 normalizers/                   # Sport normalizers
+├── 📂 risk/                          # Entropy throttle
+├── 📂 tests/                         # Test suite
+├── 📂 TOOLS/                         # Utilities
+│   ├── replay.py                     # Deterministic replay
+│   └── orin_nano_prep.sh            # Jetson deployment
+├── 📄 main.py                        # FastAPI server
+├── 📄 README.md                      # This file
+├── 📄 Claude.md                      # Developer docs
+├── 📄 TODO.md                        # Task tracker
+└── 📄 CANON.md                       # Architecture changelog
+```
+
+</details>
+
+### Component Interaction
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant Bus
+    participant Policy
+    participant Sandbox
+    participant Overlay
+    participant Provenance
+
+    Client->>Bus: POST /invoke/abraxas
+    Bus->>Policy: enforce_phase_policy()
+    Policy-->>Bus: PolicyDecision(ok=True)
+    Bus->>Sandbox: run_overlay()
+    Sandbox->>Overlay: Execute with timeout
+    Overlay-->>Sandbox: Result JSON
+    Sandbox-->>Bus: InvocationResult
+    Bus->>Provenance: append_jsonl()
+    Bus-->>Client: Response + provenance_hash
+```
+
+## 🔧 Configuration
+
+### Memory Rune Syntax
+
+#### Memory Rune (Required)
 ```
 MEM[SOFT=<mb>,HARD=<mb>,VOL=<LOW|MED|HIGH>]
 ```
-- `SOFT`: Soft cap in MB (target)
-- `HARD`: Hard cap in MB (absolute limit)
-- `VOL`: Volatility tier (memory churn rate)
+- `SOFT`: Target memory cap in MB
+- `HARD`: Absolute memory limit in MB
+- `VOL`: Memory churn rate tier
 
-### KV Rune (Optional)
+#### KV Cache Rune (Optional)
 ```
-KV[CAP=<0.0-1.0>,POLICY=<LRU|WINDOW|TASK_BOUND>,PURGE=<ON_STRESS|ON_EVENT|ON_STRESS_OR_EVENT>]
-```
-- `CAP`: Fraction of total RAM for KV cache
-- `POLICY`: Eviction policy
-- `PURGE`: When to purge cache
-
-### Tier Rune (Optional, default=LOCAL)
-```
-TIER=<LOCAL|EXTENDED|COLD>
+KV[CAP=<0.0-1.0>,POLICY=<LRU|WINDOW|TASK_BOUND>,PURGE=<ON_STRESS|ON_EVENT>]
 ```
 
-### Priority Rune (Optional, default=5)
-```
-PRIORITY=<0-9>
-```
-
-### Degrade Path (Optional)
+#### Degradation Path (Optional)
 ```
 DEGRADE{
   STEP1:SHRINK_KV(0.75),
@@ -139,587 +315,258 @@ DEGRADE{
 }
 ```
 
-Supported degradation actions:
-- `SHRINK_KV(fraction)` - Reduce KV cache size
-- `CONTEXT(tokens)` - Limit context window
-- `DISABLE(feature)` - Disable optional features
-- `BATCH(mode)` - Change batching strategy
-- `OFFLOAD(tier)` - Offload to different memory tier
+### Phase Configuration
 
-## RAM Stress Monitoring
+| Phase | External I/O | Writes | Exec | Use Case |
+|-------|-------------|--------|------|----------|
+| **OPEN** | ✅ | ✅ | ❌ | Data loading & preparation |
+| **ALIGN** | ✅ | ✅ | ❌ | Configuration & alignment |
+| **ASCEND** | ✅ | ✅ | ✅ | Execution (requires `exec` capability) |
+| **CLEAR** | ❌ | ❌ | ❌ | Read-only analysis |
+| **SEAL** | ❌ | ✅ | ❌ | Results finalization |
 
-The system continuously monitors `/proc/meminfo` to compute a RAM stress scalar:
-
-- **0.0** - No stress (plenty of memory)
-- **0.25** - Low stress
-- **0.50** - Moderate stress
-- **0.75** - High stress
-- **1.0** - Critical stress (near OOM)
-
-Degradation activates when:
-```
-RAM_STRESS > (0.3 + 0.05 * priority)
-```
-
-Higher priority jobs degrade later.
-
-## Testing
-
-Run the test suite:
+### Environment Variables
 
 ```bash
-python -c "import sys; sys.path.insert(0, '.'); from tests.test_memory_runes import *; test_parse_mem_rune_basic(); test_parse_kv_rune_basic(); test_parse_full_profile(); test_ram_stress_range(); print('All tests passed!')"
-```
-
-Or run the example:
-
-```bash
-PYTHONPATH=/home/user/AAL-core python examples/memory_governance_example.py
-```
-
-## Integration with Your Pipeline
-
-The memory governance layer sets degradation parameters in `job.metadata`. Your LLM/pipeline code should consume these:
-
-```python
-def run_job(job: JobContext):
-    # Apply KV shrinking
-    if "kv_shrink_factor" in job.metadata:
-        kv_cache.resize(base_size * job.metadata["kv_shrink_factor"])
-
-    # Limit context window
-    if "max_context_tokens" in job.metadata:
-        context_limit = job.metadata["max_context_tokens"]
-
-    # Disable features
-    if "disabled_features" in job.metadata:
-        for feature in job.metadata["disabled_features"]:
-            disable_feature(feature)
-
-    # Change batch mode
-    if "batch_mode" in job.metadata:
-        set_batch_mode(job.metadata["batch_mode"])
-
-    # Offload to different tier
-    if "offload_tier" in job.metadata:
-        offload_to(job.metadata["offload_tier"])
-```
-
-## Dynamic Function Registry (DFD)
-
-AAL-Core includes a Dynamic Function Registry for discovering and cataloging functions from multiple sources:
-
-- **Python module exports** - Functions exported via overlay manifest `py_exports`
-- **Remote service endpoints** - Functions fetched from remote services via `service_url`
-- **Change detection** - Automatic hash-based catalog versioning
-- **Event publishing** - Publishes `fn.registry.updated` events to provenance log
-
-### API Endpoints
-
-**Get current function catalog:**
-```bash
-curl http://127.0.0.1:8000/functions | jq .
-```
-
-Returns:
-```json
-{
-  "functions": [...],
-  "catalog_hash": "sha256:abc123...",
-  "generated_at_unix": 1234567890,
-  "count": 42
-}
-```
-
-**Force refresh and detect changes:**
-```bash
-curl -X POST http://127.0.0.1:8000/functions/refresh | jq .
-```
-
-Returns:
-```json
-{
-  "catalog_hash": "sha256:def456...",
-  "generated_at_unix": 1234567890,
-  "count": 43,
-  "updated": true,
-  "previous_hash": "sha256:abc123..."
-}
-```
-
-### Function Descriptor Schema
-
-Each function descriptor requires:
-- `id` - Unique function identifier
-- `name` - Human-readable name
-- `kind` - Function type (e.g., "transform", "analyze")
-- `version` - Version string
-- `owner` - Owner identifier
-- `inputs_schema` - JSON schema for inputs
-- `outputs_schema` - JSON schema for outputs
-- `capabilities` - List of capability strings
-- `provenance` - Provenance metadata
-
-### Adding Functions via Python Exports
-
-In your overlay manifest.json:
-```json
-{
-  "name": "my_overlay",
-  "version": "1.0",
-  "py_exports": ["my_module.functions"]
-}
-```
-
-In `my_module/functions.py`:
-```python
-EXPORTS = [
-    {
-        "id": "my_func",
-        "name": "My Function",
-        "kind": "transform",
-        "version": "1.0",
-        "owner": "me",
-        "inputs_schema": {"type": "object"},
-        "outputs_schema": {"type": "object"},
-        "capabilities": ["compute"],
-        "provenance": {"source": "my_module"}
-    }
-]
-```
-
-### Adding Functions via Remote Services
-
-In your overlay manifest.json:
-```json
-{
-  "name": "remote_overlay",
-  "version": "1.0",
-  "service_url": "http://remote-service:8080"
-}
-```
-
-The remote service should expose `GET /abx/functions` returning:
-```json
-{
-  "functions": [
-    {
-      "id": "remote_func",
-      "name": "Remote Function",
-      ...
-    }
-  ]
-}
-```
-
-## AAL-Core Overlay Bus
-
-AAL-Core also provides an overlay invocation bus with append-only provenance logging:
-
-### Starting the Bus
-
-```bash
-uvicorn main:app --reload
-```
-
-### Invoking an Overlay
-
-```bash
-curl -X POST "http://127.0.0.1:8000/invoke/abraxas" \
-  -H "Content-Type: application/json" \
-  -d '{"phase":"OPEN","data":{"prompt":"hello","intent":"test"}}' | jq .
-```
-
-### Provenance & Replay
-
-All invocations are logged to `logs/provenance.jsonl` with SHA256 payload hashing.
-
-**Enable Dev Mode (logs full payload for exact replay):**
-```bash
+# Enable full payload logging for replay
 export AAL_DEV_LOG_PAYLOAD=1
+
+# Set custom overlays directory
+export AAL_OVERLAYS_DIR=/path/to/overlays
+
+# Configure bus port
+export AAL_PORT=8000
 ```
 
-**Replay a provenance event:**
+## 📊 API Reference
+
+### Core Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/` | Health check |
+| `GET` | `/overlays` | List available overlays |
+| `POST` | `/invoke/{overlay}` | Execute overlay with phase and data |
+| `GET` | `/provenance?limit=N` | Retrieve provenance events |
+| `GET` | `/events?limit=N` | Retrieve bus events |
+
+### Function Registry Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/functions` | Get current function catalog |
+| `POST` | `/fn/rebuild` | Force catalog rebuild |
+| `GET` | `/events` | View registry update events |
+
+### Example Response: Invoke Overlay
+
+```json
+{
+  "ok": true,
+  "overlay": "abraxas",
+  "phase": "CLEAR",
+  "request_id": "abraxas-1703001234567",
+  "result": {
+    "analysis": "System nominal",
+    "metrics": {"entropy": 0.42}
+  },
+  "timestamp_ms": 1703001234567,
+  "payload_hash": "sha256:abc123..."
+}
+```
+
+## 🧪 Testing
+
 ```bash
-python3 TOOLS/replay.py 1  # Replay line 1
+# Run all tests
+python -m pytest tests/ -v
+
+# Run specific subsystem tests
+python -m pytest tests/test_policy_enforcement.py -v
+python -m pytest tests/test_memory_runes.py -v
+python -m pytest tests/test_overlay_dispatch.py -v
+
+# Run with coverage
+python -m pytest tests/ --cov=aal_core --cov-report=html
 ```
 
-**View provenance log:**
+## 📚 Documentation
+
+| Document | Description |
+|----------|-------------|
+| **[README.md](README.md)** | This file - Quick start and overview |
+| **[Claude.md](Claude.md)** | Comprehensive developer documentation |
+| **[CANON.md](CANON.md)** | Architectural changelog and invariants |
+| **[TODO.md](TODO.md)** | Prioritized task list and roadmap |
+| **[docs/runes.md](docs/runes.md)** | YGGDRASIL-IR and rune system guide |
+
+## 🚢 Deployment
+
+### Jetson Orin Nano
+
 ```bash
-tail -n 10 logs/provenance.jsonl | jq .
+cd ~/AAL-core
+bash TOOLS/orin_nano_prep.sh
+
+# Install systemd service
+sudo cp TOOLS/aal-core.service /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now aal-core.service
+
+# Verify
+curl http://localhost:8000/
 ```
 
-### Overlay Structure
+### Docker (Coming Soon)
 
-Overlays are located in `.aal/overlays/{name}/`:
-- `manifest.json` - Metadata, phases, capabilities, timeout
-- `src/run.py` - Executable that reads JSON from stdin, writes to stdout
+```bash
+docker build -t aal-core:latest .
+docker run -p 8000:8000 aal-core:latest
+```
 
-**Examples:**
-- `.aal/overlays/abraxas/` - Analysis-only overlay (phases: OPEN, ALIGN, CLEAR, SEAL)
-- `.aal/overlays/abraxas_exec/` - Exec-capable overlay (adds ASCEND phase with 'exec' capability)
+## 🔒 Security & Governance
 
 ### Capability Enforcement
 
 Overlays declare capabilities in their manifest:
-- `analysis` - Read-only analysis operations (CLEAR phase)
-- `exec` - Execution operations (ASCEND phase)
+- `analysis` - Read-only operations
+- `exec` - Execution permissions
+- `external_io` - Network access
+- `writes` - File system writes
 
-The bus enforces that overlays can only use phases declared in their manifest. This provides defense-in-depth against capability escalation.
+The bus enforces strict capability checks before execution, preventing privilege escalation.
 
-## Dynamic Function Discovery (DFD)
+### Provenance & Replay
 
-**DFD Rune**: ᛞᚠᛞ (Discovery → Catalog → Propagation)
-
-AAL-Core includes a Dynamic Function Discovery system that automatically discovers and indexes capabilities from Abraxas and overlays, creating a canonical function catalog.
-
-### Features
-
-- **Deterministic discovery**: Reproducible catalog from the same artifacts
-- **Provenance embedded**: Every function includes repo/commit/hash metadata
-- **Multiple sources**: Python exports, HTTP endpoints, overlay manifests
-- **Event bus integration**: Publishes `fn.registry.updated` on catalog changes
-- **Capability declarations**: Functions declare capabilities (no_net, read_only, etc.)
-
-### Quick Start
+All invocations are logged with:
+- ✅ SHA256 payload hashing
+- ✅ Manifest version tracking
+- ✅ Deterministic replay capability
+- ✅ Append-only guarantees
 
 ```bash
-# Start the service
-uvicorn main:app --reload
+# Enable dev mode for full payload logging
+export AAL_DEV_LOG_PAYLOAD=1
 
-# Get function catalog
-curl http://localhost:8000/fn/catalog | jq .
+# Replay a specific invocation
+python TOOLS/replay.py 1
 
-# Manually rebuild catalog
-curl -X POST http://localhost:8000/fn/rebuild | jq .
-
-# View bus events (includes fn.registry.updated)
-curl http://localhost:8000/events | jq .
+# View provenance log
+tail -f logs/provenance.jsonl | jq .
 ```
 
-### Discovered Functions
+## 🛠️ Development
 
-The system automatically discovers Abraxas functions:
+### Adding a New Overlay
 
-```
-- abx.metric.alive.v1     - Alive Metric (metric)
-- abx.metric.entropy.v1   - Entropy Metric (metric)
-- abx.rune.open.v1        - OPEN Phase Rune (rune)
-- abx.rune.seal.v1        - SEAL Phase Rune (rune)
-- abx.op.full_cycle.v1    - Full Abraxas Cycle (op)
+1. **Create overlay directory:**
+```bash
+mkdir -p .aal/overlays/my_overlay/src
 ```
 
-### Adding Functions
-
-1. Define function descriptor in your exports module:
-
-```python
-# your_overlay/exports.py
-EXPORTS = [
-    {
-        "id": "my.metric.example.v1",
-        "name": "Example Metric",
-        "kind": "metric",
-        "version": "1.0.0",
-        "owner": "my_overlay",
-        "entrypoint": "my_overlay.metrics:compute",
-        "inputs_schema": {"type": "object", "properties": {}},
-        "outputs_schema": {"type": "object", "properties": {}},
-        "capabilities": ["read_only"],
-        "provenance": {
-            "repo": "https://github.com/...",
-            "commit": "abc123",
-            "artifact_hash": "sha256:...",
-            "generated_at": 1703001234
-        }
-    }
-]
-```
-
-2. Update overlay manifest:
-
+2. **Write manifest:**
 ```json
 {
   "name": "my_overlay",
   "version": "1.0.0",
-  "py_exports": ["your_overlay.exports"]
+  "phases": ["OPEN", "CLEAR", "SEAL"],
+  "capabilities": ["analysis"],
+  "entrypoint": "python src/run.py",
+  "timeout_ms": 5000
 }
 ```
 
-3. Restart service or call `/fn/rebuild`
+3. **Implement entrypoint:**
+```python
+# src/run.py
+import json
+import sys
 
-### Documentation
+request = json.loads(sys.stdin.read())
+result = {"status": "ok", "data": request["payload"]}
+print(json.dumps(result))
+```
 
-- Full specification: [docs/DFD_SPEC.md](docs/DFD_SPEC.md)
-- Module README: [aal_core/services/fn_registry/README.md](aal_core/services/fn_registry/README.md)
-- Tests: `pytest tests/test_fn_registry.py -v`
+### Adding Function Exports
 
-## Next Steps
+```python
+# my_overlay/exports.py
+EXPORTS = [
+    {
+        "id": "my.func.v1",
+        "name": "My Function",
+        "kind": "transform",
+        "version": "1.0.0",
+        "owner": "my_overlay",
+        "inputs_schema": {"type": "object"},
+        "outputs_schema": {"type": "object"},
+        "capabilities": ["compute"],
+        "provenance": {"source": "my_overlay"}
+    }
+]
+```
 
-1. Wire your LLM/pipeline to respect `job.metadata` parameters
-2. Add cgroup/container enforcement for `hard_cap_mb`
-3. Implement tier-specific memory allocators (LOCAL/EXTENDED/COLD)
-4. Add metrics collection for RAM_STRESS vs degradation effectiveness
-5. Tune degradation thresholds based on workload characteristics
-6. Add overlay capability enforcement (block writes in CLEAR phase)
+## 🗺️ Roadmap
 
-## Jetson Orin Nano prep (post-flash, pre-brainstem)
+### Current Focus
+- ✅ All major subsystems merged and integrated
+- ✅ Comprehensive documentation complete
+- 🔄 Integration testing in progress
+- 🔄 Performance optimization
 
-This bootstrap readies AAL-Core on a freshly flashed Orin Nano before loading brainstem:
+### Coming Soon
+- [ ] Distributed overlay execution
+- [ ] Enhanced monitoring dashboard
+- [ ] Kubernetes deployment manifests
+- [ ] Advanced policy composition
+- [ ] Machine learning-based recommendations
 
-1. Clone the repo on the device and run the prep script (installs system deps, builds a venv, installs Python deps, writes a systemd unit template):
-   ```bash
-   cd ~/AAL-core
-   # Optional env: VENV_DIR=</path>, SERVICE_NAME=aal-core, AAL_PORT=8000, RUN_TESTS=1
-   bash TOOLS/orin_nano_prep.sh
-   ```
-2. Install the generated service for auto-start (defaults to port 8000 and AAL_DEV_LOG_PAYLOAD=0):
-   ```bash
-   sudo cp TOOLS/aal-core.service /etc/systemd/system/aal-core.service
-   sudo systemctl daemon-reload
-   sudo systemctl enable --now aal-core.service
-   ```
-3. Validate the bus:
-   ```bash
-   curl http://localhost:8000/
-   curl http://localhost:8000/overlays
-   tail -n 5 logs/provenance.jsonl  # after an invoke
-   ```
-4. When brainstem is ready to attach, point it at the service host/port above; set `AAL_DEV_LOG_PAYLOAD=1` in the unit if you want full payload replay logging.
+See [TODO.md](TODO.md) for detailed task list.
+
+## 🤝 Contributing
+
+We welcome contributions! Please see our contributing guidelines (coming soon).
+
+### Development Setup
+
+```bash
+# Install development dependencies
+pip install -r requirements-dev.txt
+
+# Run linters
+black .
+flake8 .
+mypy .
+
+# Run tests before committing
+pytest tests/ -v
+```
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🙏 Acknowledgments
+
+Built with:
+- FastAPI for the web framework
+- Pydantic for data validation
+- Python 3.11+ for modern language features
+
+## 📞 Support
+
+- **Issues**: [GitHub Issues](https://github.com/scrimshawlife-ctrl/AAL-core/issues)
+- **Documentation**: [Claude.md](Claude.md)
+- **Changelog**: [CANON.md](CANON.md)
 
 ---
 
-## Overlays
+<div align="center">
 
-AAL-Core includes a **hot-swappable overlay adapter layer** that allows external services (BeatOven, Psy-Fi, Patch-Hive, HollerSports, etc.) to integrate with the memory governance spine without library dependencies.
+**AAL-Core** - Architecture Abstraction Layer
 
-### Architecture
+Built for deterministic AI workloads with provenance tracking
 
-```
-aal_overlays/
-├── manifest.py       # Overlay schema & validation
-├── registry.py       # Install/enable/disable overlays
-├── dispatch.py       # Integration seam with MemoryAwareScheduler
-├── provenance.py     # Deterministic run_id & tracking
-└── runners/
-    ├── http_runner.py   # HTTP-based overlays
-    └── proc_runner.py   # Subprocess-based overlays
-```
+⭐ Star us on GitHub | 📖 Read the docs | 🚀 Deploy today
 
-### Key Concepts
-
-- **Overlay**: External capability (service or CLI) with a manifest
-- **Manifest**: JSON file defining entrypoints, capabilities, memory profiles, and policies
-- **Registry**: Manages installed/enabled overlays
-- **Dispatch**: Creates JobContext + submits through MemoryAwareScheduler
-- **Provenance**: Deterministic tracking with run_id, hashes, environment fingerprint
-
-### Quick Start
-
-#### 1. Create an Overlay Manifest
-
-```python
-from aal_overlays import OverlayManifest
-
-manifest_data = {
-    "name": "psyfi",
-    "version": "0.1.0",
-    "description": "Psy-Fi simulation overlay",
-    "entrypoints": {
-        "http": {"base_url": "http://127.0.0.1:8787"}
-    },
-    "capabilities": {
-        "simulate": {
-            "runner": "http",
-            "path": "/run",
-            "method": "POST",
-            "timeout_s": 60,
-            "default_profile": "BALANCED",
-            "degradation": {
-                "max_fraction": 0.7,
-                "disable_nonessential": true
-            }
-        }
-    },
-    "resources": {"prefers_gpu": true},
-    "policy": {"deterministic": true}
-}
-
-manifest = OverlayManifest.from_dict(manifest_data)
-```
-
-#### 2. Install and Enable
-
-```python
-from aal_overlays import OverlayRegistry
-
-registry = OverlayRegistry()  # Uses .aal/overlays by default
-registry.install_manifest(manifest)
-registry.enable("psyfi")
-```
-
-#### 3. Dispatch Capability Calls
-
-```python
-from abx_runes.scheduler_memory_layer import MemoryAwareScheduler
-from aal_overlays import dispatch_capability_call, make_overlay_run_job
-
-# Create scheduler with overlay runner
-run_job = make_overlay_run_job(registry)
-scheduler = MemoryAwareScheduler(run_job)
-
-# Execute capability
-result = dispatch_capability_call(
-    scheduler=scheduler,
-    registry=registry,
-    capability="psyfi.simulate",
-    payload={
-        "simulation_type": "quantum_coherence",
-        "parameters": {"duration": 100}
-    },
-    profile="BALANCED",  # Optional; uses capability default if omitted
-    seed="fixed-seed"    # Optional; for deterministic run_id
-)
-
-print(result["ok"])          # True/False
-print(result["result"])      # Capability output
-print(result["provenance"])  # Run tracking
-```
-
-### Manifest Structure
-
-Manifests are stored at `.aal/overlays/<overlay_name>/manifest.json`:
-
-```json
-{
-  "name": "overlay_name",
-  "version": "0.1.0",
-  "description": "...",
-  "entrypoints": {
-    "http": {"base_url": "http://..."},
-    "proc": {"command": ["python", "-m", "cli"]}
-  },
-  "capabilities": {
-    "capability_name": {
-      "runner": "http",
-      "path": "/endpoint",
-      "method": "POST",
-      "timeout_s": 30,
-      "default_profile": "BALANCED",
-      "degradation": {
-        "max_fraction": 0.5,
-        "disable_nonessential": true
-      }
-    }
-  },
-  "resources": {
-    "prefers_gpu": false,
-    "notes": "Optional notes"
-  },
-  "policy": {
-    "deterministic": true
-  }
-}
-```
-
-### Memory Profiles
-
-Three built-in profiles are available:
-
-- **MINIMAL**: 512-1024MB, priority 3, LOCAL tier
-- **BALANCED**: 2-4GB, priority 5, EXTENDED tier, KV cache + degradation
-- **PERFORMANCE**: 4-8GB, priority 8, LOCAL tier, minimal degradation
-
-You can also provide custom rune text as the `profile` parameter.
-
-### Provenance Tracking
-
-Every dispatch generates a deterministic `ProvenanceRecord`:
-
-```python
-{
-  "run_id": "sha256_hash",
-  "overlay": {"name": "psyfi", "version": "0.1.0"},
-  "capability": "simulate",
-  "payload_hash": "sha256_of_payload",
-  "environment": {
-    "python_version": "3.11.0",
-    "platform": {"system": "Linux", "release": "..."},
-    "git_commit": "abc123...",
-    "timestamp_utc": "2025-12-14T12:00:00Z"
-  },
-  "deterministic": true,
-  "seed": "optional_seed"
-}
-```
-
-### HTTP Runner
-
-Uses `urllib.request` (no external deps):
-- Deterministic JSON encoding (`sort_keys=True`)
-- Automatic retries (2 attempts with exponential backoff)
-- Timeout enforcement
-- Standard response format: `{"ok": bool, "result": ..., "error": ...}`
-
-### Proc Runner
-
-Executes CLI overlays via subprocess:
-- Command: `base_command + [path, "--stdin-json"]`
-- Request sent via stdin as canonical JSON
-- Response read from stdout as JSON
-
-### Testing
-
-Run the test suite:
-
-```bash
-# Test manifests
-python tests/test_overlay_manifest.py
-
-# Test registry
-python tests/test_overlay_registry.py
-
-# Test HTTP dispatch (includes fake server)
-python tests/test_overlay_dispatch_http.py
-```
-
-Run the example:
-
-```bash
-python examples/overlay_call_example.py
-```
-
-### Integration Pattern
-
-The overlay layer integrates seamlessly with the existing memory governance:
-
-1. **Dispatch** resolves capability → creates JobContext with memory profile
-2. **MemoryAwareScheduler** applies degradation based on RAM_STRESS
-3. **Runner** executes via HTTP/proc with degraded parameters in `job.metadata`
-4. **Overlay service** reads degradation hints and adjusts behavior
-
-This architecture allows:
-- **Zero coupling**: Overlays don't import AAL-Core
-- **Hot swap**: Enable/disable overlays without restarts
-- **Memory safety**: All overlays governed by ABX-Runes constraints
-- **Provenance**: Every call tracked with deterministic run_id
-
-### Deployment Example
-
-1. **Deploy overlay service** (e.g., Psy-Fi on port 8787)
-2. **Create manifest** with service URL
-3. **Install to registry**: `registry.install_manifest(manifest)`
-4. **Enable**: `registry.enable("psyfi")`
-5. **Dispatch calls**: Memory-governed execution with automatic degradation
-
-### Next Steps
-
-1. Deploy your overlay as an HTTP service or CLI
-2. Write a manifest describing its capabilities
-3. Install and enable in registry
-4. Use `dispatch_capability_call()` for memory-safe execution
-5. Monitor provenance records for debugging and audit
-
-## License
-
-See [LICENSE](LICENSE) file.
+</div>
