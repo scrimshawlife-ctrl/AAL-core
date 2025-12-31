@@ -7,6 +7,7 @@ from pathlib import Path
 from abx_runes.yggdrasil.io import load_manifest_dict, verify_hash
 from abx_runes.yggdrasil.lint import render_forbidden_crossings_report
 from abx_runes.yggdrasil.evidence_loader import load_evidence_bundles
+from abx_runes.yggdrasil.manifest_load import load_structured_manifest
 from abx_runes.yggdrasil.plan import build_execution_plan
 from abx_runes.yggdrasil.schema import (
     PlanOptions,
@@ -23,59 +24,6 @@ from abx_runes.yggdrasil.schema import (
     YggdrasilNode,
 )
 from abx_runes.yggdrasil.validate import ValidationError, validate_manifest
-
-
-def _load_structured(path: Path) -> YggdrasilManifest:
-    """Load manifest dict and convert to structured YggdrasilManifest."""
-    d = load_manifest_dict(path)
-    prov = d["provenance"]
-    provenance = ProvenanceSpec(
-        schema_version=str(prov["schema_version"]),
-        manifest_hash=str(prov.get("manifest_hash", "")),
-        created_at=str(prov.get("created_at", "")),
-        updated_at=str(prov.get("updated_at", "")),
-        source_commit=str(prov.get("source_commit", "")),
-    )
-
-    nodes = []
-    for n in d.get("nodes", []):
-        nodes.append(
-            YggdrasilNode(
-                id=str(n["id"]),
-                kind=NodeKind(str(n["kind"])),
-                realm=Realm(str(n["realm"])),
-                lane=Lane(str(n["lane"])),
-                authority_level=int(n["authority_level"]),
-                parent=n.get("parent"),
-                depends_on=tuple(n.get("depends_on", [])),
-                inputs=tuple(PortSpec(**p) for p in n.get("inputs", [])),
-                outputs=tuple(PortSpec(**p) for p in n.get("outputs", [])),
-                promotion_state=PromotionState(str(n.get("promotion_state", "shadow"))),
-                stabilization=StabilizationSpec(**n.get("stabilization", {})),
-                governance=GovernanceSpec(
-                    rent_metrics=tuple(n.get("governance", {}).get("rent_metrics", [])),
-                    gates_required=tuple(n.get("governance", {}).get("gates_required", [])),
-                ),
-            )
-        )
-
-    links = []
-    for l in d.get("links", []):
-        links.append(
-            RuneLink(
-                id=str(l["id"]),
-                from_node=str(l["from_node"]),
-                to_node=str(l["to_node"]),
-                allowed_lanes=tuple(l.get("allowed_lanes", [])),
-                data_class=str(l.get("data_class", "feature")),
-                determinism_rule=str(l.get("determinism_rule", "stable_sort_by_id")),
-                failure_mode=str(l.get("failure_mode", "not_computable")),
-                evidence_required=tuple(l.get("evidence_required", [])),
-                required_evidence_ports=tuple(PortSpec(**p) for p in l.get("required_evidence_ports", []) or []),
-            )
-        )
-
-    return YggdrasilManifest(provenance=provenance, nodes=tuple(nodes), links=tuple(links))
 
 
 def main() -> int:
@@ -112,7 +60,7 @@ def main() -> int:
 
     # structural validation (includes hard membrane rules)
     try:
-        m = _load_structured(path)
+        m = load_structured_manifest(path)
         validate_manifest(m)
     except ValidationError as e:
         print(f"YGGDRASIL LINT FAIL: validation error: {e}")

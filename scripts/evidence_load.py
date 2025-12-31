@@ -7,7 +7,7 @@ from pathlib import Path
 
 from abx_runes.yggdrasil.evidence_loader import load_evidence_bundles, load_evidence_bundles_for_manifest
 from abx_runes.yggdrasil.hashing import canonical_json_dumps
-from scripts.yggdrasil_lint import _load_structured
+from abx_runes.yggdrasil.manifest_load import load_structured_manifest
 
 
 def main() -> int:
@@ -19,7 +19,7 @@ def main() -> int:
     args = ap.parse_args()
 
     if args.manifest:
-        m = _load_structured(Path(args.manifest))
+        m = load_structured_manifest(Path(args.manifest))
         res = load_evidence_bundles_for_manifest(args.bundle, m)
     else:
         res = load_evidence_bundles(args.bundle)
