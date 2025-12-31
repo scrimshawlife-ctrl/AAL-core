@@ -45,6 +45,25 @@ Abraxas Overlay
 
 ## Changelog
 
+### 2025-12-15 - Capability Enforcement (ASCEND/exec)
+- **Added abraxas_exec overlay variant with 'exec' capability**
+  - Declares both 'analysis' and 'exec' capabilities
+  - Includes ASCEND phase for exec-capable operations
+  - Points to same abraxas overlay code via symlink
+- **ASCEND phase handler added to abraxas overlay**
+  - Simulates exec operations (hash computation)
+  - Only accessible to overlays declaring ASCEND in phases
+- **Capability enforcement tests (5 new tests, 16/16 passing)**
+  - test_ascend_allowed_for_exec_capable_overlay
+  - test_ascend_blocked_for_analysis_only_overlay
+  - test_exec_overlay_lists_ascend_phase
+  - test_analysis_overlay_does_not_list_ascend
+  - test_exec_overlay_can_use_clear_phase
+- **Proves capability enforcement at manifest level**
+  - Overlays can only use phases declared in manifest
+  - Phase validation happens at bus level (400 error if invalid)
+  - Read-only overlays cannot access exec phases
+
 ### 2025-12-15 - Replay Upgrade
 - **Payload logging now controlled by AAL_DEV_LOG_PAYLOAD env var**
   - Default (production): Only SHA256 payload hash logged
