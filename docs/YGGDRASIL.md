@@ -209,6 +209,13 @@ Verify a bundle:
 python scripts/evidence_pack.py verify --bundle evidence/my_bridge.bundle.json
 ```
 
+Load bundles against the manifest (recommended):
+```bash
+python scripts/evidence_load.py \
+  --manifest yggdrasil.manifest.json \
+  --bundle evidence/my_bridge.bundle.json
+```
+
 **This is enforced physics, not documentation.**
 
 CI will block any PR that violates these rules.

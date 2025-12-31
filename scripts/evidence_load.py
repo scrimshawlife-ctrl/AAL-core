@@ -3,19 +3,26 @@ from __future__ import annotations
 
 import argparse
 import json
+from pathlib import Path
 
-from abx_runes.yggdrasil.evidence_loader import load_evidence_bundles
+from abx_runes.yggdrasil.evidence_loader import load_evidence_bundles, load_evidence_bundles_for_manifest
 from abx_runes.yggdrasil.hashing import canonical_json_dumps
+from scripts.yggdrasil_lint import _load_structured
 
 
 def main() -> int:
     """Load + verify evidence bundle files and output planning ports."""
     ap = argparse.ArgumentParser(description="Load + verify evidence bundle files and output planning ports.")
     ap.add_argument("--bundle", action="append", default=[], help="Path to an evidence bundle JSON (repeatable)")
+    ap.add_argument("--manifest", default="", help="Optional yggdrasil.manifest.json; if provided, bridges must exist in manifest.links")
     ap.add_argument("--out", default="", help="Optional output JSON file for ports (else print)")
     args = ap.parse_args()
 
-    res = load_evidence_bundles(args.bundle)
+    if args.manifest:
+        m = _load_structured(Path(args.manifest))
+        res = load_evidence_bundles_for_manifest(args.bundle, m)
+    else:
+        res = load_evidence_bundles(args.bundle)
 
     out = {
         "bundle_paths_ok": list(res.bundle_paths_ok),
