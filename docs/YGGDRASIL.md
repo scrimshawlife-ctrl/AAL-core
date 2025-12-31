@@ -30,6 +30,8 @@ make yggdrasil
 **Run lint gate:**
 ```bash
 make yggdrasil-lint
+make bridge-patch-lint
+make bridge-unlockability-lint
 ```
 
 **Run tests:**
