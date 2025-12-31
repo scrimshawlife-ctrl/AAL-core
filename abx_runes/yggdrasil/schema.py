@@ -2,14 +2,14 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence, Tuple
+from typing import Any, Dict, Mapping, Optional, Tuple
 
 
 class Realm(str, Enum):
-    ASGARD = "ASGARD"        # promoted / governed prediction + approved metrics
-    HEL = "HEL"              # shadow-only observation metrics/detectors
-    MIDGARD = "MIDGARD"      # observations / world inputs
-    NIFLHEIM = "NIFLHEIM"    # missingness / uncertainty / not_computable rules
+    ASGARD = "ASGARD"          # promoted / governed prediction + approved metrics
+    HEL = "HEL"                # shadow-only observation metrics/detectors
+    MIDGARD = "MIDGARD"        # observations / world inputs
+    NIFLHEIM = "NIFLHEIM"      # missingness / uncertainty / not_computable rules
     MUSPELHEIM = "MUSPELHEIM"  # generative / creative transforms
 
 
@@ -38,10 +38,7 @@ class NodeKind(str, Enum):
 @dataclass(frozen=True)
 class PortSpec:
     """
-    Typed IO ports, deliberately minimal:
-    - name: stable port label
-    - dtype: stringly-typed for now to avoid extra deps (can be JSON Schema later)
-    - required: planner may prune if required input is missing and failure_mode says so
+    Typed IO ports (minimal, stringly-typed for portability).
     """
     name: str
     dtype: str
@@ -81,7 +78,7 @@ class YggdrasilNode:
     # Tree parent (governance spine). None only for the single root node.
     parent: Optional[str] = None
 
-    # DAG dependencies (data veins). These are node IDs.
+    # DAG dependencies (data veins).
     depends_on: Tuple[str, ...] = ()
 
     inputs: Tuple[PortSpec, ...] = ()
@@ -95,32 +92,26 @@ class YggdrasilNode:
 @dataclass(frozen=True)
 class RuneLink:
     """
-    Explicit bridge for cross-realm or cross-lane wiring.
+    Explicit bridge for cross-realm/cross-lane wiring.
     """
     id: str
     from_node: str
     to_node: str
 
-    # Allowed lane transitions, e.g. ("forecast->forecast", "neutral->forecast")
+    # Allowed lane transitions e.g. ("forecast->forecast", "neutral->forecast")
     allowed_lanes: Tuple[str, ...] = ()
 
-    # observation | feature | artifact_only | other (free string for now)
+    # observation | feature | artifact_only | other
     data_class: str = "feature"
 
-    # determinism requirements ("stable_sort_by_id", "hash_inputs", etc.)
     determinism_rule: str = "stable_sort_by_id"
-
-    # missing input behavior: not_computable | skip | fallback
-    failure_mode: str = "not_computable"
-
+    failure_mode: str = "not_computable"  # not_computable | skip | fallback
     evidence_required: Tuple[str, ...] = ()
+    required_evidence_ports: Tuple[PortSpec, ...] = ()
 
 
 @dataclass(frozen=True)
 class YggdrasilManifest:
-    """
-    Entire topology bundle. Stored as JSON on disk; loaded into this structure.
-    """
     provenance: ProvenanceSpec
     nodes: Tuple[YggdrasilNode, ...]
     links: Tuple[RuneLink, ...] = ()
@@ -128,29 +119,22 @@ class YggdrasilManifest:
     def node_index(self) -> Dict[str, YggdrasilNode]:
         return {n.id: n for n in self.nodes}
 
-    def link_index(self) -> Dict[str, RuneLink]:
-        return {l.id: l for l in self.links}
-
 
 @dataclass(frozen=True)
 class PlanOptions:
     include_realms: Optional[Tuple[Realm, ...]] = None
     include_lanes: Optional[Tuple[Lane, ...]] = None
     include_kinds: Optional[Tuple[NodeKind, ...]] = None
-
-    # Prune deprecated/archived by default.
     allow_deprecated: bool = False
     allow_archived: bool = False
+    # Optional evidence/data availability for not-computable pruning
+    # Type is Any (InputBundle) to avoid circular import; deterministic anyway
+    input_bundle: Any = None
 
 
 @dataclass(frozen=True)
 class ExecutionPlan:
-    """
-    Deterministic plan output: execution order (toposorted), plus pruned sets.
-    """
     ordered_node_ids: Tuple[str, ...]
     pruned_node_ids: Tuple[str, ...]
     options: PlanOptions
-
-    # Evidence-style trace for auditability
     planner_trace: Mapping[str, Any] = field(default_factory=dict)

@@ -1,0 +1,17 @@
+{
+  "overlay.abraxas": {
+    "realm": "MIDGARD",
+    "lane": "neutral",
+    "promotion_state": "candidate"
+  },
+  "realm.hel": {
+    "realm": "HEL",
+    "lane": "shadow",
+    "promotion_state": "promoted"
+  },
+  "realm.asgard": {
+    "realm": "ASGARD",
+    "lane": "forecast",
+    "promotion_state": "promoted"
+  }
+}

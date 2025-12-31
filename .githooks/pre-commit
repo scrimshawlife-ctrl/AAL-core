@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+echo "[pre-commit] Regenerating yggdrasil.manifest.json (hash-locked)…"
+
+PYTHONPATH=. python scripts/gen_yggdrasil_manifest.py \
+  --repo-root . \
+  --out yggdrasil.manifest.json \
+  --source-commit "$(git rev-parse HEAD 2>/dev/null || echo unknown)"
+
+echo "[pre-commit] Running yggdrasil lint gate…"
+PYTHONPATH=. python scripts/yggdrasil_lint.py --manifest yggdrasil.manifest.json
+
+echo "[pre-commit] OK"

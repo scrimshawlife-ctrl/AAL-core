@@ -10,5 +10,30 @@
     "compact_text": []
   },
   "entrypoint": "python src/run.py",
-  "timeout_ms": 2500
+  "timeout_ms": 2500,
+  "schema_version": "yggdrasil-overlay/0.1",
+  "overlay": {
+    "id": "abraxas",
+    "description": "Abraxas overlay: analysis + prediction modules (declared topology only).",
+    "default_realm": "MIDGARD",
+    "default_lane": "neutral"
+  },
+  "runes": [
+    {
+      "id": "abraxas.shadow.compliance_vs_remix",
+      "depends_on": ["realm.hel", "kernel.registry"],
+      "realm": "HEL",
+      "lane": "shadow",
+      "promotion_state": "candidate",
+      "tags": ["shadow", "detector"]
+    },
+    {
+      "id": "abraxas.forecast.oracle_signal_v2",
+      "depends_on": ["realm.asgard", "kernel.registry"],
+      "realm": "ASGARD",
+      "lane": "forecast",
+      "promotion_state": "candidate",
+      "tags": ["forecast", "oracle"]
+    }
+  ]
 }
