@@ -1,3 +1,1 @@
-"""AAL-Core: Autonomous Agent Layer - Core Components"""
-
-__version__ = "0.1.0"
+"""AAL Core - Architecture Abstraction Layer for AAL-Core integrations and utilities."""

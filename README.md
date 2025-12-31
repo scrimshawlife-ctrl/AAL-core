@@ -4,7 +4,26 @@ AAL-Core engine for Tachyon deployment with ABX-Runes Memory Governance Layer.
 
 ## Overview
 
-AAL-Core provides a deterministic, modular memory governance system for ABX-Runes. This layer enables:
+AAL-Core is a comprehensive architecture abstraction layer that provides deterministic, modular systems for memory governance, overlay orchestration, and dynamic function discovery.
+
+## Key Features
+
+### Integrated Systems (All Branches Merged ✓)
+
+- **ABX-Runes Memory Governance** - Declarative memory contracts with automatic degradation
+- **YGGDRASIL-IR Metadata Layer** - Evidence bundles, bridge promotion, and provenance tracking
+- **Phase Policy Enforcement** - Granular capability-based access control with phase-aware permissions
+- **BeatOven Metrics Integration** - Catalog integration for metrics aggregation
+- **Dynamic Function Discovery (DFD)** - Multi-source function registry with hash-based change detection
+- **Oracle-Runes Integration** - SDS, IPL, ADD operators with drift tracking and provenance
+- **Abraxas Overlay System** - Analysis and prediction modules with capability enforcement
+- **Alignment Core** - Constitutional layer with regime-based governance and objective firewall
+- **Event Bus** - Provenance logging with deterministic replay capability
+- **Sandboxed Execution** - Subprocess isolation with timeout enforcement
+
+### Core Capabilities
+
+AAL-Core provides:
 
 - **Runic memory contracts** - Declarative memory limits and behavior specifications
 - **Live RAM stress monitoring** - Real-time memory pressure detection (0-1 scalar)
@@ -186,6 +205,113 @@ def run_job(job: JobContext):
         offload_to(job.metadata["offload_tier"])
 ```
 
+## Dynamic Function Registry (DFD)
+
+AAL-Core includes a Dynamic Function Registry for discovering and cataloging functions from multiple sources:
+
+- **Python module exports** - Functions exported via overlay manifest `py_exports`
+- **Remote service endpoints** - Functions fetched from remote services via `service_url`
+- **Change detection** - Automatic hash-based catalog versioning
+- **Event publishing** - Publishes `fn.registry.updated` events to provenance log
+
+### API Endpoints
+
+**Get current function catalog:**
+```bash
+curl http://127.0.0.1:8000/functions | jq .
+```
+
+Returns:
+```json
+{
+  "functions": [...],
+  "catalog_hash": "sha256:abc123...",
+  "generated_at_unix": 1234567890,
+  "count": 42
+}
+```
+
+**Force refresh and detect changes:**
+```bash
+curl -X POST http://127.0.0.1:8000/functions/refresh | jq .
+```
+
+Returns:
+```json
+{
+  "catalog_hash": "sha256:def456...",
+  "generated_at_unix": 1234567890,
+  "count": 43,
+  "updated": true,
+  "previous_hash": "sha256:abc123..."
+}
+```
+
+### Function Descriptor Schema
+
+Each function descriptor requires:
+- `id` - Unique function identifier
+- `name` - Human-readable name
+- `kind` - Function type (e.g., "transform", "analyze")
+- `version` - Version string
+- `owner` - Owner identifier
+- `inputs_schema` - JSON schema for inputs
+- `outputs_schema` - JSON schema for outputs
+- `capabilities` - List of capability strings
+- `provenance` - Provenance metadata
+
+### Adding Functions via Python Exports
+
+In your overlay manifest.json:
+```json
+{
+  "name": "my_overlay",
+  "version": "1.0",
+  "py_exports": ["my_module.functions"]
+}
+```
+
+In `my_module/functions.py`:
+```python
+EXPORTS = [
+    {
+        "id": "my_func",
+        "name": "My Function",
+        "kind": "transform",
+        "version": "1.0",
+        "owner": "me",
+        "inputs_schema": {"type": "object"},
+        "outputs_schema": {"type": "object"},
+        "capabilities": ["compute"],
+        "provenance": {"source": "my_module"}
+    }
+]
+```
+
+### Adding Functions via Remote Services
+
+In your overlay manifest.json:
+```json
+{
+  "name": "remote_overlay",
+  "version": "1.0",
+  "service_url": "http://remote-service:8080"
+}
+```
+
+The remote service should expose `GET /abx/functions` returning:
+```json
+{
+  "functions": [
+    {
+      "id": "remote_func",
+      "name": "Remote Function",
+      ...
+    }
+  ]
+}
+```
+
 ## AAL-Core Overlay Bus
 
 AAL-Core also provides an overlay invocation bus with append-only provenance logging:
@@ -240,6 +366,93 @@ Overlays declare capabilities in their manifest:
 - `exec` - Execution operations (ASCEND phase)
 
 The bus enforces that overlays can only use phases declared in their manifest. This provides defense-in-depth against capability escalation.
+
+## Dynamic Function Discovery (DFD)
+
+**DFD Rune**: ᛞᚠᛞ (Discovery → Catalog → Propagation)
+
+AAL-Core includes a Dynamic Function Discovery system that automatically discovers and indexes capabilities from Abraxas and overlays, creating a canonical function catalog.
+
+### Features
+
+- **Deterministic discovery**: Reproducible catalog from the same artifacts
+- **Provenance embedded**: Every function includes repo/commit/hash metadata
+- **Multiple sources**: Python exports, HTTP endpoints, overlay manifests
+- **Event bus integration**: Publishes `fn.registry.updated` on catalog changes
+- **Capability declarations**: Functions declare capabilities (no_net, read_only, etc.)
+
+### Quick Start
+
+```bash
+# Start the service
+uvicorn main:app --reload
+
+# Get function catalog
+curl http://localhost:8000/fn/catalog | jq .
+
+# Manually rebuild catalog
+curl -X POST http://localhost:8000/fn/rebuild | jq .
+
+# View bus events (includes fn.registry.updated)
+curl http://localhost:8000/events | jq .
+```
+
+### Discovered Functions
+
+The system automatically discovers Abraxas functions:
+
+```
+- abx.metric.alive.v1     - Alive Metric (metric)
+- abx.metric.entropy.v1   - Entropy Metric (metric)
+- abx.rune.open.v1        - OPEN Phase Rune (rune)
+- abx.rune.seal.v1        - SEAL Phase Rune (rune)
+- abx.op.full_cycle.v1    - Full Abraxas Cycle (op)
+```
+
+### Adding Functions
+
+1. Define function descriptor in your exports module:
+
+```python
+# your_overlay/exports.py
+EXPORTS = [
+    {
+        "id": "my.metric.example.v1",
+        "name": "Example Metric",
+        "kind": "metric",
+        "version": "1.0.0",
+        "owner": "my_overlay",
+        "entrypoint": "my_overlay.metrics:compute",
+        "inputs_schema": {"type": "object", "properties": {}},
+        "outputs_schema": {"type": "object", "properties": {}},
+        "capabilities": ["read_only"],
+        "provenance": {
+            "repo": "https://github.com/...",
+            "commit": "abc123",
+            "artifact_hash": "sha256:...",
+            "generated_at": 1703001234
+        }
+    }
+]
+```
+
+2. Update overlay manifest:
+
+```json
+{
+  "name": "my_overlay",
+  "version": "1.0.0",
+  "py_exports": ["your_overlay.exports"]
+}
+```
+
+3. Restart service or call `/fn/rebuild`
+
+### Documentation
+
+- Full specification: [docs/DFD_SPEC.md](docs/DFD_SPEC.md)
+- Module README: [aal_core/services/fn_registry/README.md](aal_core/services/fn_registry/README.md)
+- Tests: `pytest tests/test_fn_registry.py -v`
 
 ## Next Steps
 

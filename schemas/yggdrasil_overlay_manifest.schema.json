@@ -1,0 +1,138 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "yggdrasil-overlay-manifest/0.1",
+  "title": "Yggdrasil Overlay Manifest v0.1",
+  "description": "Contract for overlay manifest.json files in .aal/overlays/*/",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "yggdrasil-overlay/0.1",
+      "description": "Schema version identifier"
+    },
+    "overlay": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Overlay identifier (must match directory name)"
+        },
+        "description": {
+          "type": "string",
+          "description": "Human-readable overlay description"
+        },
+        "default_realm": {
+          "type": "string",
+          "enum": ["ASGARD", "HEL", "MIDGARD", "NIFLHEIM", "MUSPELHEIM"],
+          "description": "Default realm for runes in this overlay"
+        },
+        "default_lane": {
+          "type": "string",
+          "enum": ["shadow", "forecast", "neutral"],
+          "description": "Default lane for runes in this overlay"
+        }
+      },
+      "required": ["id"]
+    },
+    "runes": {
+      "type": "array",
+      "description": "Declared runes in this overlay",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Unique rune identifier"
+          },
+          "depends_on": {
+            "type": "array",
+            "description": "Declared dependencies (node IDs)",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "realm": {
+            "type": "string",
+            "enum": ["ASGARD", "HEL", "MIDGARD", "NIFLHEIM", "MUSPELHEIM"],
+            "description": "Override overlay default realm"
+          },
+          "lane": {
+            "type": "string",
+            "enum": ["shadow", "forecast", "neutral"],
+            "description": "Override overlay default lane"
+          },
+          "promotion_state": {
+            "type": "string",
+            "enum": ["shadow", "candidate", "promoted", "deprecated", "archived"],
+            "description": "Promotion lifecycle state"
+          },
+          "tags": {
+            "type": "array",
+            "description": "Arbitrary tags for filtering/grouping",
+            "items": {
+              "type": "string"
+            }
+          },
+          "inputs": {
+            "type": "array",
+            "description": "Declared input ports (typed)",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "Port name"
+                },
+                "dtype": {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "Data type (e.g., 'pd.DataFrame', 'str', 'int')"
+                },
+                "required": {
+                  "type": "boolean",
+                  "description": "Whether this input is required for execution"
+                }
+              },
+              "required": ["name", "dtype"]
+            }
+          },
+          "outputs": {
+            "type": "array",
+            "description": "Declared output ports (typed)",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "Port name"
+                },
+                "dtype": {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "Data type (e.g., 'pd.DataFrame', 'str', 'int')"
+                },
+                "required": {
+                  "type": "boolean",
+                  "description": "Whether this output is guaranteed"
+                }
+              },
+              "required": ["name", "dtype"]
+            }
+          }
+        },
+        "required": ["id"]
+      }
+    }
+  },
+  "required": ["schema_version", "overlay"]
+}

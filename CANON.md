@@ -77,6 +77,47 @@ Abraxas Overlay
   - Added test_replay_functionality
   - 7/7 tests passing
 
+### 2025-12-21 - Dynamic Function Registry (DFD)
+- **Added Dynamic Function Registry system**
+  - Aggregates function descriptors from multiple sources
+  - Supports Python module exports via overlay manifest `py_exports`
+  - Supports remote function discovery via overlay `service_url`
+  - Hash-based change detection with SHA256 catalog versioning
+  - Event publishing to provenance log on catalog updates
+- **New API endpoints**
+  - `GET /functions` - Retrieve current function catalog
+  - `POST /functions/refresh` - Force rebuild and detect changes
+- **Event bus integration**
+  - EventBus class wraps provenance logging
+  - Publishes `fn.registry.updated` events with catalog metadata
+- **Function descriptor schema**
+  - Required fields: id, name, kind, version, owner, inputs_schema, outputs_schema, capabilities, provenance
+  - Validation ensures field completeness and ID uniqueness
+  - Deduplication by ID (last wins) for multi-source aggregation
+- **Architecture additions**
+  ```
+  aal_core/
+  ├── __init__.py
+  └── registry/
+      ├── __init__.py
+      └── function_registry.py    # Core DFD implementation
+
+  main.py
+  ├── EventBus class              # Provenance event publishing
+  ├── FunctionRegistry instance   # Global function catalog
+  ├── GET /functions             # Catalog retrieval endpoint
+  └── POST /functions/refresh    # Manual refresh endpoint
+  ```
+- **Test coverage**
+  - Added 18 comprehensive tests in tests/test_function_registry.py
+  - All 29 tests passing (7 existing + 4 memory runes + 18 new)
+  - Tests cover validation, manifest loading, hashing, change detection, event publishing
+- **Guarantees**
+  - Deterministic catalog hashing (order-independent after sorting)
+  - Atomic catalog snapshots (immutable CatalogSnapshot dataclass)
+  - Graceful failure handling for remote services (timeout, network errors)
+  - Type safety with frozen dataclasses
+
 ### 2025-12-15
 - Initial AAL-Core bus implementation
 - Abraxas overlay integration (v2.1)

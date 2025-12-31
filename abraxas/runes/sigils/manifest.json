@@ -1,0 +1,32 @@
+{
+  "version": "1.0.0",
+  "generator": "aal-core-oracle-integration",
+  "created_utc": "2025-12-21T00:00:00Z",
+  "runes": [
+    {
+      "id": "ϟ₁",
+      "short_name": "SEED",
+      "description": "Deterministic entropy seeding"
+    },
+    {
+      "id": "ϟ₂",
+      "short_name": "CANON",
+      "description": "Canonical structure enforcement"
+    },
+    {
+      "id": "ϟ₄",
+      "short_name": "SDS",
+      "description": "State-Dependent Susceptibility gating"
+    },
+    {
+      "id": "ϟ₅",
+      "short_name": "IPL",
+      "description": "Insight Phase Lock scheduling"
+    },
+    {
+      "id": "ϟ₆",
+      "short_name": "ADD",
+      "description": "Anchor Drift Detection"
+    }
+  ]
+}
