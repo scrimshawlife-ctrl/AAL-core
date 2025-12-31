@@ -1,0 +1,77 @@
+# Phase Policy Constraints
+# Defines what each phase is allowed to do
+# Enforced at runtime before overlay execution
+
+OPEN:
+  description: "Maximum freedom - exploration, prototyping, unrestricted capability access"
+  allowed_capabilities:
+    - network_io
+    - file_read
+    - file_write
+    - compute_intensive
+    - external_api
+    - subprocess
+  forbidden_patterns:
+    - "rm -rf"
+    - "mkfs"
+    - "dd if="
+  max_duration_ms: 10000
+  require_audit: false
+
+ALIGN:
+  description: "Constitutional review - alignment scoring, value frame checks, bounded execution"
+  allowed_capabilities:
+    - file_read
+    - compute_intensive
+  forbidden_capabilities:
+    - network_io
+    - file_write
+    - subprocess
+    - external_api
+  max_duration_ms: 5000
+  require_audit: true
+  notes: "ALIGN phase must not have side effects - read-only analysis"
+
+ASCEND:
+  description: "Capability elevation - self-modification proposals, learning, adaptation"
+  allowed_capabilities:
+    - file_read
+    - compute_intensive
+    - network_io  # For fetching training data, knowledge updates
+  forbidden_capabilities:
+    - file_write  # No direct modification
+    - subprocess  # No execution of proposed changes
+  max_duration_ms: 15000
+  require_audit: true
+  require_approval: true
+  notes: "ASCEND generates proposals only - execution happens after human approval"
+
+CLEAR:
+  description: "Deterministic execution - no I/O, pure computation, replay-safe"
+  allowed_capabilities:
+    - compute_intensive
+  forbidden_capabilities:
+    - network_io
+    - file_read
+    - file_write
+    - external_api
+    - subprocess
+  max_duration_ms: 2500
+  require_audit: true
+  deterministic: true
+  notes: "CLEAR must be replay-safe - same input always produces same output"
+
+SEAL:
+  description: "Production deployment - immutable execution, full audit trail, strict constraints"
+  allowed_capabilities:
+    - file_read
+    - compute_intensive
+    - network_io  # Restricted to declared endpoints only
+  forbidden_capabilities:
+    - file_write  # Immutable once sealed
+    - subprocess
+  max_duration_ms: 5000
+  require_audit: true
+  require_provenance: true
+  immutable: true
+  notes: "SEAL phase is production-ready - no modifications, full observability"

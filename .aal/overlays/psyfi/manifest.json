@@ -1,0 +1,33 @@
+{
+  "name": "psyfi",
+  "version": "0.1.0",
+  "description": "Psy-Fi overlay service for AAL-core overlay dispatch",
+  "entrypoints": {
+    "http": { "base_url": "http://127.0.0.1:8787" }
+  },
+  "capabilities": {
+    "psyfi.ping": {
+      "runner": "http",
+      "path": "/run",
+      "method": "POST",
+      "timeout_s": 10,
+      "default_profile": "BALANCED",
+      "degradation": { "max_fraction": 0.25, "disable_nonessential": true }
+    },
+    "psyfi.echo": {
+      "runner": "http",
+      "path": "/run",
+      "method": "POST",
+      "timeout_s": 30,
+      "default_profile": "BALANCED",
+      "degradation": { "max_fraction": 0.5, "disable_nonessential": true }
+    }
+  },
+  "resources": {
+    "prefers_gpu": false,
+    "notes": "initial overlay uses stdlib server; extend router to call real Psy-Fi APIs later"
+  },
+  "policy": {
+    "deterministic": true
+  }
+}

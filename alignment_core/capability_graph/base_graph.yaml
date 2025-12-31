@@ -1,0 +1,236 @@
+# Capability Graph - Base Definition
+# Defines all capabilities and their allowed compositions
+
+version: 1.0.0
+last_updated: 2025-12-08
+
+# ============================================================================
+# NODES - Individual Capabilities
+# ============================================================================
+
+nodes:
+  # ------------------------------------------------------------------------
+  # DATA ACCESS
+  # ------------------------------------------------------------------------
+
+  - id: read_public
+    name: "Read Public Data"
+    type: data
+    description: "Access publicly available datasets"
+    risk_level: 1
+    regime_availability: [lab, boxed, field]
+    rate_limit: null  # No limit
+    requires_approval: false
+
+  - id: read_curated
+    name: "Read Curated Data"
+    type: data
+    description: "Access curated/anonymized production data"
+    risk_level: 3
+    regime_availability: [boxed, field]
+    rate_limit: 1000  # per hour
+    requires_approval: false
+
+  - id: read_production
+    name: "Read Production Data"
+    type: data
+    description: "Access live production databases"
+    risk_level: 7
+    regime_availability: [field]
+    rate_limit: 100
+    requires_approval: true
+
+  # ------------------------------------------------------------------------
+  # ANALYSIS
+  # ------------------------------------------------------------------------
+
+  - id: analyze_text
+    name: "Text Analysis"
+    type: tool
+    description: "Analyze text content"
+    risk_level: 1
+    regime_availability: [lab, boxed, field]
+    rate_limit: null
+    requires_approval: false
+
+  - id: analyze_code
+    name: "Code Analysis"
+    type: tool
+    description: "Static code analysis"
+    risk_level: 2
+    regime_availability: [lab, boxed, field]
+    rate_limit: null
+    requires_approval: false
+
+  # ------------------------------------------------------------------------
+  # CODE EXECUTION
+  # ------------------------------------------------------------------------
+
+  - id: code_exec_sandbox
+    name: "Sandboxed Code Execution"
+    type: tool
+    description: "Execute code in isolated sandbox"
+    risk_level: 5
+    regime_availability: [boxed, field]
+    rate_limit: 50
+    requires_approval: false
+
+  - id: code_exec_production
+    name: "Production Code Execution"
+    type: tool
+    description: "Execute code in production environment"
+    risk_level: 10
+    regime_availability: [field]
+    rate_limit: 10
+    requires_approval: true
+
+  # ------------------------------------------------------------------------
+  # NETWORK ACCESS
+  # ------------------------------------------------------------------------
+
+  - id: network_localhost
+    name: "Localhost Network"
+    type: api
+    description: "Access local network services"
+    risk_level: 3
+    regime_availability: [boxed, field]
+    rate_limit: 200
+    requires_approval: false
+
+  - id: network_whitelist
+    name: "Whitelisted APIs"
+    type: api
+    description: "Call pre-approved external APIs"
+    risk_level: 6
+    regime_availability: [field]
+    rate_limit: 100
+    requires_approval: false
+
+  - id: network_unrestricted
+    name: "Unrestricted Network"
+    type: api
+    description: "Arbitrary internet access"
+    risk_level: 9
+    regime_availability: []  # Never available
+    rate_limit: 0
+    requires_approval: true
+    forbidden: true  # Globally forbidden
+
+  # ------------------------------------------------------------------------
+  # SELF-MODIFICATION
+  # ------------------------------------------------------------------------
+
+  - id: selfmod_propose
+    name: "Propose Self-Modification"
+    type: primitive
+    description: "Submit modification proposal"
+    risk_level: 4
+    regime_availability: [lab, boxed]
+    rate_limit: 5  # per day
+    requires_approval: false
+
+  - id: selfmod_execute
+    name: "Execute Self-Modification"
+    type: primitive
+    description: "Apply modifications to self"
+    risk_level: 10
+    regime_availability: []  # Never directly available
+    rate_limit: 0
+    requires_approval: true
+    forbidden: true  # Must go through gateway
+
+# ============================================================================
+# EDGES - Capability Compositions
+# ============================================================================
+
+edges:
+  # ------------------------------------------------------------------------
+  # SAFE COMPOSITIONS
+  # ------------------------------------------------------------------------
+
+  - from: read_public
+    to: analyze_text
+    combined_risk: 1
+    requires_approval: false
+    description: "Read and analyze public data"
+
+  - from: read_curated
+    to: analyze_code
+    combined_risk: 3
+    requires_approval: false
+    description: "Analyze curated code"
+
+  # ------------------------------------------------------------------------
+  # APPROVED COMPOSITIONS (require specific regime)
+  # ------------------------------------------------------------------------
+
+  - from: code_exec_sandbox
+    to: network_localhost
+    combined_risk: 6
+    requires_approval: false
+    regime_required: boxed
+    description: "Sandbox execution with local network (BOXED mode)"
+
+  - from: read_production
+    to: analyze_text
+    combined_risk: 7
+    requires_approval: true
+    regime_required: field
+    description: "Analyze production data (FIELD mode, approved)"
+
+  # ------------------------------------------------------------------------
+  # FORBIDDEN COMPOSITIONS
+  # ------------------------------------------------------------------------
+
+  - from: code_exec_sandbox
+    to: network_unrestricted
+    combined_risk: 10
+    forbidden: true
+    description: "Code execution + unrestricted network = arbitrary remote code execution"
+
+  - from: code_exec_production
+    to: network_unrestricted
+    combined_risk: 10
+    forbidden: true
+    description: "Production code + unrestricted network = critical risk"
+
+  - from: selfmod_execute
+    to: code_exec_production
+    combined_risk: 10
+    forbidden: true
+    description: "Self-modification + production execution = uncontrolled evolution"
+
+  - from: read_production
+    to: network_unrestricted
+    combined_risk: 10
+    forbidden: true
+    description: "Production data + unrestricted network = data exfiltration risk"
+
+# ============================================================================
+# SYSTEM-WIDE FORBIDDEN COMBINATIONS
+# ============================================================================
+
+forbidden_combinations:
+  - capabilities: [selfmod_execute, code_exec_production]
+    reason: "Uncontrolled self-improvement in production"
+
+  - capabilities: [code_exec_sandbox, network_unrestricted]
+    reason: "Arbitrary remote code execution"
+
+  - capabilities: [read_production, network_whitelist, selfmod_propose]
+    reason: "Data exfiltration via self-modification"
+
+# ============================================================================
+# NOTES
+# ============================================================================
+
+notes: |
+  This is the authoritative capability map. All agent capabilities must
+  be defined here with explicit risk levels and composition rules.
+
+  Adding new capabilities requires:
+  1. Security review
+  2. Risk assessment
+  3. Composition analysis
+  4. Testing in LAB mode first
+  5. Approval before BOXED/FIELD deployment

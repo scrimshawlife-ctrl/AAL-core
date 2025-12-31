@@ -1,0 +1,198 @@
+# ValueFrame Schema v1.0.0
+#
+# This defines the structure all ValueFrames must follow.
+# ValueFrames are YAML files that specify constraints for agent behavior.
+
+# ============================================================================
+# METADATA (Required)
+# ============================================================================
+
+name: string                    # Unique identifier (e.g., "safety_global")
+version: string                 # Semantic version (e.g., "1.2.3")
+jurisdiction: string            # "global", "us", "eu", "domain_specific", etc.
+author: string                  # Team or person who created this frame
+last_updated: date              # ISO 8601 date (YYYY-MM-DD)
+status: string                  # "active", "deprecated", "draft"
+supersedes: string | null       # Previous version this replaces (if any)
+
+# ============================================================================
+# PRINCIPLES (Required)
+# ============================================================================
+# High-level value statements that guide the frame
+
+principles:
+  - string                      # List of principle statements
+  # Example: "Prevent harm to humans and infrastructure"
+  # Example: "Preserve user autonomy and agency"
+
+# ============================================================================
+# CONSTRAINTS (Required)
+# ============================================================================
+# Specific rules the agent must follow
+
+constraints:
+  - id: string                  # Unique constraint ID (e.g., "physical_harm_001")
+    type: enum                  # "hard", "soft", "contextual", "procedural"
+    category: string            # High-level category (e.g., "physical_harm", "legal", "privacy")
+    rule: string                # Natural language rule statement
+
+    # Examples of allowed and prohibited behavior
+    examples:
+      prohibited: list[string]  # Requests that violate this constraint
+      allowed: list[string]     # Requests that are acceptable
+      edge_cases: list[string]  # Ambiguous cases (optional)
+
+    # Explanation of the reasoning behind this constraint
+    reasoning: string           # Why this constraint exists
+
+    # Severity and response
+    violation_severity: enum    # "critical", "high", "moderate", "low"
+    action: enum                # "refuse", "transform", "escalate", "warn"
+
+    # Optional: Transformation strategy (if action is "transform")
+    transformation: string | null
+
+    # Optional: Alternative suggestions (if refusing)
+    alternatives: list[string] | null
+
+    # Optional: Conditions under which this constraint applies
+    applies_when: list[string] | null
+
+    # Optional: Explicit exceptions to this rule
+    exceptions: list
+      - condition: string       # When the exception applies
+        requires: string        # What must be true for the exception
+        justification: string   # Why the exception exists
+
+    # Optional: Escalation triggers
+    escalation_triggers: list[string] | null
+
+# ============================================================================
+# EXCEPTION HANDLING (Optional)
+# ============================================================================
+# Global exceptions that apply across multiple constraints
+
+global_exceptions:
+  - name: string                # Exception name
+    applies_to: list[string]    # Constraint IDs this applies to
+    condition: string           # When this exception is valid
+    justification: string       # Why this exception exists
+    requirements: list[string]  # What must be verified
+
+# ============================================================================
+# ESCALATION POLICY (Required)
+# ============================================================================
+# When and how to escalate to human review
+
+escalation:
+  triggers:                     # Conditions that require human review
+    - string
+
+  procedure:                    # Steps to take when escalating
+    - string
+
+  sla: string                   # Expected response time (e.g., "< 5 minutes")
+
+# ============================================================================
+# CONFLICT RESOLUTION (Optional)
+# ============================================================================
+# How this frame interacts with other frames
+
+conflict_resolution:
+  priority: integer             # Priority level (1-10, higher = more important)
+  defers_to: list[string]       # Other frames that take precedence
+  conflicts_with: list[string]  # Known conflicting frames
+  resolution_strategy: string   # How to resolve conflicts
+
+# ============================================================================
+# METRICS (Optional)
+# ============================================================================
+# How to measure effectiveness of this frame
+
+metrics:
+  - name: string                # Metric name
+    description: string         # What it measures
+    target: string              # Target value or range
+    alert_threshold: string     # When to alert operators
+
+# ============================================================================
+# METADATA FOR GOVERNANCE (Optional)
+# ============================================================================
+
+governance:
+  review_cycle: string          # How often to review (e.g., "quarterly")
+  reviewers: list[string]       # Who should review
+  approval_required: list[string] # Roles that must approve changes
+  change_log_url: string        # Link to detailed change history
+
+# ============================================================================
+# TESTING REQUIREMENTS (Optional)
+# ============================================================================
+
+testing:
+  test_suite_id: string         # ID of associated red team test suite
+  coverage_target: float        # % of constraints that must be tested
+  required_edge_cases: integer  # Minimum number of edge cases to test
+
+# ============================================================================
+# NOTES
+# ============================================================================
+
+notes: string | null            # Free-form notes for operators
+
+# ============================================================================
+# EXAMPLE CONSTRAINT TYPES
+# ============================================================================
+
+# TYPE: hard
+# - Must NEVER violate
+# - Immediate REFUSE or ESCALATE
+# - No exceptions unless explicitly listed
+# - Examples: weapons, illegal activity, severe harm
+
+# TYPE: soft
+# - Should avoid, but context matters
+# - May TRANSFORM to satisfy
+# - More lenient interpretation
+# - Examples: graphic content, controversial topics
+
+# TYPE: contextual
+# - Applies only in specific situations
+# - Check `applies_when` conditions
+# - May not apply in all scenarios
+# - Examples: medical advice (when not a doctor), legal advice (when not a lawyer)
+
+# TYPE: procedural
+# - Process requirement, not content restriction
+# - Enforces workflows and approvals
+# - Examples: "self-modification requires sandbox", "production changes need approval"
+
+# ============================================================================
+# EXAMPLE ACTIONS
+# ============================================================================
+
+# ACTION: refuse
+# - Cannot fulfill request
+# - Provide explanation referencing this constraint
+# - Suggest alternatives if possible
+
+# ACTION: transform
+# - Apply safe abstraction or de-escalation
+# - Maintain user intent while satisfying constraint
+# - Use `transformation` field for guidance
+
+# ACTION: escalate
+# - Flag for immediate human review
+# - Halt processing
+# - Preserve full context
+# - High-severity or novel scenario
+
+# ACTION: warn
+# - Proceed but add disclaimer/caveat
+# - Log for monitoring
+# - Used for soft constraints
+
+# ============================================================================
+# VERSION HISTORY
+# ============================================================================
+# 1.0.0 (2025-12-08): Initial schema definition
