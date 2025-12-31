@@ -44,10 +44,14 @@ python scripts/evidence_pack.py verify --bundle evidence/bridge_<from>_<to>.bund
 
 ## 4) ALLOW (manual, explicit)
 
-Apply the RuneLink patch snippet to `yggdrasil.manifest.json` by updating the specific link:
-- allowed_lanes includes `shadow->forecast`
-- evidence_required includes `EXPLICIT_SHADOW_FORECAST_BRIDGE`
-- required_evidence_ports contains the per-edge evidence port name
+Apply the RuneLink patch snippet safely:
+
+```bash
+python scripts/bridge_apply.py \
+  --manifest yggdrasil.manifest.json \
+  --patch evidence/bridge_<from>_<to>.rune_link.patch.json \
+  --require-valid-hash
+```
 
 CI will enforce the rest.
 
