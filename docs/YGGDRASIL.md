@@ -190,6 +190,24 @@ make yggdrasil-lint
 - RuneLink MUST allow the actual lane-pair
 - `shadow->forecast` is **explicit-only** and requires evidence tag: `EXPLICIT_SHADOW_FORECAST_BRIDGE`
 
+## Evidence Bundles (for explicit shadow→forecast bridges)
+
+Evidence bundle dtype: `evidence_bundle`
+
+Create a bundle:
+```bash
+python scripts/evidence_pack.py new \
+  --out evidence/my_bridge.bundle.json \
+  --url "https://example.com/report" \
+  --claim "This detector output is calibrated + safe to influence forecast under gate X." \
+  --confidence 0.7
+```
+
+Verify a bundle:
+```bash
+python scripts/evidence_pack.py verify --bundle evidence/my_bridge.bundle.json
+```
+
 **This is enforced physics, not documentation.**
 
 CI will block any PR that violates these rules.

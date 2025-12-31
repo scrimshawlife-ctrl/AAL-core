@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "abx-evidence-bundle/0.1",
+  "title": "ABX Evidence Bundle v0.1",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": { "type": "string", "const": "abx-evidence-bundle/0.1" },
+    "created_at": { "type": "string", "minLength": 10 },
+    "bundle_hash": { "type": "string", "minLength": 1 },
+    "sources": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "kind": { "type": "string", "enum": ["url", "file", "commit", "dataset", "note"] },
+          "ref": { "type": "string", "minLength": 1 },
+          "digest": { "type": "string", "minLength": 1 },
+          "observed_at": { "type": "string" }
+        },
+        "required": ["kind", "ref", "digest"]
+      }
+    },
+    "claims": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "statement": { "type": "string", "minLength": 1 },
+          "confidence": { "type": "number", "minimum": 0.0, "maximum": 1.0 },
+          "supports": { "type": "array", "items": { "type": "string", "minLength": 1 } }
+        },
+        "required": ["id", "statement", "confidence", "supports"]
+      }
+    },
+    "calibration_refs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "kind": { "type": "string", "enum": ["golden_test", "metrics_run", "notebook", "report"] },
+          "ref": { "type": "string", "minLength": 1 },
+          "digest": { "type": "string", "minLength": 1 }
+        },
+        "required": ["kind", "ref", "digest"]
+      }
+    }
+  },
+  "required": ["schema_version", "created_at", "bundle_hash", "sources", "claims"]
+}
