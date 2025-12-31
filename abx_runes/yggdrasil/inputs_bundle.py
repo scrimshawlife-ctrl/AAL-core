@@ -28,6 +28,14 @@ class InputBundle:
         """Check if port with exact name + dtype is present."""
         return self.present.get(name) == dtype
 
+    def merge(self, other: "InputBundle") -> "InputBundle":
+        """
+        Deterministic merge: other overrides on name collision.
+        """
+        merged = dict(self.present)
+        merged.update(dict(other.present))
+        return InputBundle(present=merged)
+
     def missing_required(self, required_ports: Tuple) -> Tuple[str, ...]:
         """
         Determine which required ports are missing from this bundle.

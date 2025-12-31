@@ -6,7 +6,10 @@ from pathlib import Path
 
 from abx_runes.yggdrasil.io import load_manifest_dict, verify_hash
 from abx_runes.yggdrasil.lint import render_forbidden_crossings_report
+from abx_runes.yggdrasil.evidence_loader import load_evidence_bundles
+from abx_runes.yggdrasil.plan import build_execution_plan
 from abx_runes.yggdrasil.schema import (
+    PlanOptions,
     GovernanceSpec,
     Lane,
     NodeKind,
@@ -94,6 +97,7 @@ def main() -> int:
     """
     ap = argparse.ArgumentParser(description="CI-grade lint for yggdrasil.manifest.json")
     ap.add_argument("--manifest", default="yggdrasil.manifest.json", help="Path to manifest JSON")
+    ap.add_argument("--evidence-bundle", action="append", default=[], help="Evidence bundle JSON path(s) to unlock bridges in optional plan check")
     args = ap.parse_args()
 
     path = Path(args.manifest)
@@ -121,6 +125,22 @@ def main() -> int:
     if forbidden:
         print(report)
         return 5
+
+    # Optional: prove a plan can be built with provided evidence bundles (does not execute)
+    if args.evidence_bundle:
+        res = load_evidence_bundles(args.evidence_bundle)
+        # if any are bad, fail (since user explicitly provided them)
+        if res.bundle_paths_bad:
+            print("YGGDRASIL LINT FAIL: provided evidence bundles invalid:")
+            for b in res.bundle_paths_bad:
+                print(f"- {b['path']}: {b['reason']}")
+            return 6
+        # build a plan with the evidence port present
+        plan = build_execution_plan(m, PlanOptions(input_bundle=res.input_bundle))
+        # if everything pruned, signal failure (indicates unsatisfied required ports somewhere)
+        if not plan.ordered_node_ids:
+            print("YGGDRASIL LINT FAIL: plan empty even with provided evidence bundles.")
+            return 7
 
     print("YGGDRASIL LINT OK")
     return 0
