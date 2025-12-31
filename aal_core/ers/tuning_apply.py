@@ -35,15 +35,18 @@ def hot_apply_tuning_ir(
     - Checks capability_required per knob
     - Checks stabilization gate for knobs that require it
     - If tuning mode == shadow_tune: does not apply, only returns what WOULD apply
+    - v0.2: promoted_tune requires evidence_bundle_hash
     """
     if not cycle_boundary:
         return HotApplyResult(applied={}, rejected={"__all__": "not_cycle_boundary"})
 
+    mode = str(tuning_ir.get("mode"))
+    if mode == "promoted_tune" and not str(tuning_ir.get("evidence_bundle_hash", "")).strip():
+        return HotApplyResult(applied={}, rejected={"__all__": "missing_promotion_evidence"})
+
     ok, reason = validate_tuning_ir_against_envelope(tuning_ir, tuning_envelope)
     if not ok:
         return HotApplyResult(applied={}, rejected={"__all__": f"invalid_ir:{reason}"})
-
-    mode = str(tuning_ir.get("mode"))
     assigns: Dict[str, Any] = tuning_ir.get("assignments") or {}
     knob_specs = {k["name"]: k for k in (tuning_envelope.get("knobs") or [])}
 

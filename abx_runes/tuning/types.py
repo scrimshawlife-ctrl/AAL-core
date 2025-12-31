@@ -84,6 +84,7 @@ class TuningIR:
     node_id: str
     assignments: Dict[str, KnobValue]
     reason_tags: Tuple[str, ...] = ()
+    evidence_bundle_hash: str = ""  # v0.2: required by ERS if mode==promoted_tune
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -95,4 +96,5 @@ class TuningIR:
             "node_id": self.node_id,
             "assignments": dict(self.assignments),
             "reason_tags": list(self.reason_tags),
+            "evidence_bundle_hash": self.evidence_bundle_hash,
         }
