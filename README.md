@@ -4,7 +4,26 @@ AAL-Core engine for Tachyon deployment with ABX-Runes Memory Governance Layer.
 
 ## Overview
 
-AAL-Core provides a deterministic, modular memory governance system for ABX-Runes. This layer enables:
+AAL-Core is a comprehensive architecture abstraction layer that provides deterministic, modular systems for memory governance, overlay orchestration, and dynamic function discovery.
+
+## Key Features
+
+### Integrated Systems (All Branches Merged ✓)
+
+- **ABX-Runes Memory Governance** - Declarative memory contracts with automatic degradation
+- **YGGDRASIL-IR Metadata Layer** - Evidence bundles, bridge promotion, and provenance tracking
+- **Phase Policy Enforcement** - Granular capability-based access control with phase-aware permissions
+- **BeatOven Metrics Integration** - Catalog integration for metrics aggregation
+- **Dynamic Function Discovery (DFD)** - Multi-source function registry with hash-based change detection
+- **Oracle-Runes Integration** - SDS, IPL, ADD operators with drift tracking and provenance
+- **Abraxas Overlay System** - Analysis and prediction modules with capability enforcement
+- **Alignment Core** - Constitutional layer with regime-based governance and objective firewall
+- **Event Bus** - Provenance logging with deterministic replay capability
+- **Sandboxed Execution** - Subprocess isolation with timeout enforcement
+
+### Core Capabilities
+
+AAL-Core provides:
 
 - **Runic memory contracts** - Declarative memory limits and behavior specifications
 - **Live RAM stress monitoring** - Real-time memory pressure detection (0-1 scalar)
