@@ -1,15 +1,15 @@
 {
   "name": "abraxas",
-  "version": "2.2",
+  "version": "2.1",
   "status": "active",
-  "phases": ["OPEN", "ALIGN", "ASCEND", "CLEAR", "SEAL"],
-  "capabilities": ["analysis", "exec"],
+  "phases": ["OPEN", "ALIGN", "CLEAR", "SEAL"],
+  "capabilities": ["analysis"],
   "op_policy": {
     "hash": [],
     "echo": [],
     "compact_text": []
   },
-  "entrypoint": "python src/run.py",
+  "entrypoint": "python3 src/run.py",
   "timeout_ms": 2500,
   "py_exports": ["abraxas.exports"],
   "schema_version": "yggdrasil-overlay/0.1",
