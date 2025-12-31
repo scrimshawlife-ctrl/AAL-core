@@ -182,6 +182,7 @@ def invoke_overlay(overlay_name: str, req: InvokeRequest):
             f"Invalid phase '{req.phase}' for overlay '{overlay_name}'. Valid: {manifest.phases}"
         )
 
+<<<<<<< HEAD
     # Track op and required capabilities for ASCEND enforcement
     op = None
     op_required_caps = []
@@ -210,6 +211,13 @@ def invoke_overlay(overlay_name: str, req: InvokeRequest):
     decision = enforce_phase_policy(req.phase, manifest.capabilities + list(op_required_caps))
     if not decision.ok:
         raise HTTPException(status_code=403, detail=decision.reason)
+=======
+    # Enforce phase policy
+    overlay_caps = manifest.get("capabilities", [])
+    policy_decision = enforce_phase_policy(req.phase, overlay_caps)
+    if not policy_decision.ok:
+        raise HTTPException(403, policy_decision.reason)
+>>>>>>> origin/claude/add-phase-policy-enforcement-zE1qq
 
     # Compute payload hash for provenance
     payload_hash = compute_payload_hash(req.data)
