@@ -22,3 +22,9 @@ evidence-relock:
 
 test:
 	pytest -q
+
+tuning-plane-test:
+	pytest -q tests/test_tuning_plane_validator.py tests/test_tuning_plane_hot_apply.py
+
+docs:
+	@echo "Docs present: docs/TUNING_PLANE.md"
