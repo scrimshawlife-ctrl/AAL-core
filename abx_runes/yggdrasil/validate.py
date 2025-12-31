@@ -48,6 +48,14 @@ def validate_manifest(m: YggdrasilManifest) -> None:
     def link_requires_evidence_tag(frm: str, to: str, tag: str) -> bool:
         return any(tag in (l.evidence_required or ()) for l in by_edge.get((frm, to), []))
 
+    def link_requires_port(frm: str, to: str, port_name: str, dtype: str) -> bool:
+        for l in by_edge.get((frm, to), []):
+            ports = getattr(l, "required_evidence_ports", ()) or ()
+            for p in ports:
+                if p.name == port_name and p.dtype == dtype and bool(p.required):
+                    return True
+        return False
+
     # Lane + realm + existence rules over depends_on
     for n in m.nodes:
         for dep_id in n.depends_on:
@@ -79,6 +87,11 @@ def validate_manifest(m: YggdrasilManifest) -> None:
                 if not link_requires_evidence_tag(dep.id, n.id, "EXPLICIT_SHADOW_FORECAST_BRIDGE"):
                     raise ValidationError(
                         f"shadow->forecast bridge requires evidence_required tag 'EXPLICIT_SHADOW_FORECAST_BRIDGE': '{dep.id}' -> '{n.id}'."
+                    )
+                # And must require explicit evidence port (structural contract)
+                if not link_requires_port(dep.id, n.id, "explicit_shadow_forecast_bridge", "evidence_bundle"):
+                    raise ValidationError(
+                        f"shadow->forecast bridge requires required_evidence_ports including explicit_shadow_forecast_bridge:evidence_bundle: '{dep.id}' -> '{n.id}'."
                     )
 
     _assert_acyclic_depends_on(nodes)

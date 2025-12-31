@@ -68,6 +68,7 @@ def _load_structured(path: Path) -> YggdrasilManifest:
                 determinism_rule=str(l.get("determinism_rule", "stable_sort_by_id")),
                 failure_mode=str(l.get("failure_mode", "not_computable")),
                 evidence_required=tuple(l.get("evidence_required", [])),
+                required_evidence_ports=tuple(PortSpec(**p) for p in l.get("required_evidence_ports", []) or []),
             )
         )
 

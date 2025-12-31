@@ -74,6 +74,7 @@ def ensure_links_for_crossings(
                 "determinism_rule": "stable_sort_by_id",
                 "failure_mode": "not_computable",
                 "evidence_required": [],
+                "required_evidence_ports": [],
             }
 
             # Auto-allow only if NOT shadow->forecast
@@ -86,6 +87,9 @@ def ensure_links_for_crossings(
                     "reason": "shadow->forecast requires explicit allowed_lanes + evidence bundle; auto-allow forbidden",
                 })
                 link["evidence_required"] = ["EXPLICIT_SHADOW_FORECAST_BRIDGE"]
+                link["required_evidence_ports"] = [
+                    {"name": "explicit_shadow_forecast_bridge", "dtype": "evidence_bundle", "required": True}
+                ]
 
             out_links.append(link)
             have.add((from_id, to_id))

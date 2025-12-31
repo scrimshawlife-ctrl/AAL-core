@@ -3,6 +3,7 @@ import pytest
 from abx_runes.yggdrasil.schema import (
     Lane,
     NodeKind,
+    PortSpec,
     ProvenanceSpec,
     Realm,
     RuneLink,
@@ -65,6 +66,7 @@ def test_allows_shadow_to_forecast_only_if_link_explicit():
                 to_node="forecast.pred",
                 allowed_lanes=("shadow->forecast",),
                 evidence_required=("EXPLICIT_SHADOW_FORECAST_BRIDGE",),
+                required_evidence_ports=(PortSpec(name="explicit_shadow_forecast_bridge", dtype="evidence_bundle", required=True),),
             ),
         ),
     )

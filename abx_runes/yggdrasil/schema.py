@@ -107,6 +107,7 @@ class RuneLink:
     determinism_rule: str = "stable_sort_by_id"
     failure_mode: str = "not_computable"  # not_computable | skip | fallback
     evidence_required: Tuple[str, ...] = ()
+    required_evidence_ports: Tuple[PortSpec, ...] = ()
 
 
 @dataclass(frozen=True)

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Dict, List, Set
 
-from .schema import ExecutionPlan, PlanOptions, PromotionState, YggdrasilManifest, YggdrasilNode
+from .schema import ExecutionPlan, PlanOptions, PromotionState, YggdrasilManifest, YggdrasilNode, RuneLink
 from .validate import validate_manifest
 from .inputs_bundle import InputBundle
 
@@ -34,6 +34,19 @@ def build_execution_plan(m: YggdrasilManifest, options: PlanOptions) -> Executio
 
     kept: Set[str] = {n.id for n in m.nodes if allowed(n)}
 
+    # index links by edge
+    links_by_edge: Dict[tuple, List[RuneLink]] = {}
+    for l in m.links:
+        links_by_edge.setdefault((l.from_node, l.to_node), []).append(l)
+
+    def _required_bridge_ports(from_id: str, to_id: str):
+        ls = links_by_edge.get((from_id, to_id), [])
+        # deterministic: merge required ports across links (should usually be 1 link)
+        ports = []
+        for l in sorted(ls, key=lambda x: x.id):
+            ports.extend(list(getattr(l, "required_evidence_ports", ()) or ()))
+        return tuple(ports)
+
     # not-computable pruning: required inputs missing from bundle
     not_computable_reasons: Dict[str, str] = {}
     if bundle is not None:
@@ -43,6 +56,24 @@ def build_execution_plan(m: YggdrasilManifest, options: PlanOptions) -> Executio
             if missing:
                 kept.remove(nid)
                 not_computable_reasons[nid] = f"missing_required_inputs:{','.join(missing)}"
+
+        # bridge evidence pruning: cross-realm deps may require evidence ports on the link
+        for nid in sorted(list(kept)):
+            n = idx[nid]
+            missing_ports = []
+            for dep_id in sorted(list(n.depends_on)):
+                if dep_id not in idx:
+                    continue
+                dep = idx[dep_id]
+                if dep.realm != n.realm:
+                    req_ports = _required_bridge_ports(dep_id, nid)
+                    # Require all required ports be present in the bundle
+                    for p in req_ports:
+                        if p.required and not bundle.has(p.name, p.dtype):
+                            missing_ports.append(p.name)
+            if missing_ports:
+                kept.remove(nid)
+                not_computable_reasons[nid] = f"missing_bridge_evidence:{','.join(sorted(set(missing_ports)))}"
 
     # closure prune: if you depend on something pruned, you get pruned too
     changed = True
