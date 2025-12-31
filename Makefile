@@ -1,4 +1,4 @@
-.PHONY: yggdrasil yggdrasil-lint bridge-patch-lint bridge-unlockability-lint evidence-relock test
+.PHONY: yggdrasil yggdrasil-lint bridge-patch-lint bridge-unlockability-lint evidence-relock test portfolio-test
 
 # Override if needed:
 PY ?= python
@@ -25,6 +25,9 @@ test:
 
 tuning-plane-test:
 	pytest -q tests/test_tuning_plane_validator.py tests/test_tuning_plane_hot_apply.py
+
+portfolio-test:
+	pytest -q tests/test_effects_store_roundtrip.py tests/test_significance_gate_z.py
 
 docs:
 	@echo "Docs present: docs/TUNING_PLANE.md"
