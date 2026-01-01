@@ -31,5 +31,10 @@ tuning-plane-test:
 		tests/test_rent_paid.py \
 		tests/test_promoted_tune_requires_evidence.py
 
+portfolio-test:
+	pytest -q \
+		tests/test_effects_store_roundtrip.py \
+		tests/test_portfolio_measured_effect_gate.py
+
 docs:
 	@echo "Docs present: docs/TUNING_PLANE.md"
