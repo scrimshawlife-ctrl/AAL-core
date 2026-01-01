@@ -50,6 +50,10 @@ def ers_optimize_portfolio(
     metrics_snapshot: Dict[str, Any],
     metric_name: str = "latency_ms_p95",
     allow_shadow_only: bool = False,
+    enable_cross_bucket_shadow: bool = True,
+    min_similarity: float = 0.75,
+    shadow_penalty: float = 0.5,
+    z_threshold_shadow: float = 3.0,
 ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
     """
     ERS v0.7: compute baseline signature and optimize using bucket-local effects.
@@ -61,5 +65,9 @@ def ers_optimize_portfolio(
         baseline_signature=baseline,
         metric_name=metric_name,
         allow_shadow_only=allow_shadow_only,
+        enable_cross_bucket_shadow=enable_cross_bucket_shadow,
+        min_similarity=min_similarity,
+        shadow_penalty=shadow_penalty,
+        z_threshold_shadow=z_threshold_shadow,
     )
 

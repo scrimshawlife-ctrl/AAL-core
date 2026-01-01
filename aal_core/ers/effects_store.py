@@ -60,6 +60,33 @@ class EffectStore:
     def to_dict(self) -> Dict[str, Any]:
         return {"schema_version": "effect-store/0.7", "stats": {k: v.to_dict() for k, v in self.stats_by_key.items()}}
 
+    def buckets_for(self, *, module_id: str, knob: str, value: Any) -> Dict[str, Dict[str, RunningStats]]:
+        """
+        Enumerate bucketed stats for a given (module_id, knob, value).
+
+        Returns: baseline_items_str -> { metric_name -> RunningStats }
+
+        Notes:
+        - Only returns bucketed keys (v0.7): module::knob::value::baseline_items::metric
+        - Legacy (unbucketed) keys are ignored.
+        """
+        prefix = f"{module_id}::{knob}::{str(value)}::"
+        out: Dict[str, Dict[str, RunningStats]] = {}
+        for key, rs in self.stats_by_key.items():
+            if not key.startswith(prefix):
+                continue
+            rest = key[len(prefix) :]
+            # legacy: module::knob::value::metric (no baseline segment)
+            if "::" not in rest:
+                continue
+            baseline_items, metric_name = rest.split("::", 1)
+            bucket = out.get(baseline_items)
+            if bucket is None:
+                bucket = {}
+                out[baseline_items] = bucket
+            bucket[str(metric_name)] = rs
+        return out
+
     @staticmethod
     def from_dict(d: Dict[str, Any]) -> "EffectStore":
         raw = d.get("stats") or {}
