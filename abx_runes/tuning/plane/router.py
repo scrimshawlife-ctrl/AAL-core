@@ -11,6 +11,8 @@ from aal_core.ers.drift_sentinel import DriftReport, compute_drift
 from aal_core.ers.effects_store import EffectStore
 from aal_core.ers.risk_governor import RiskPolicy, clamp_exploit_assignments, clamp_policy
 from aal_core.ers.stabilization import StabilizationState
+from aal_core.governance.promotion_influence import compute_promotion_influence
+from aal_core.governance.promotion_policy import PromotionPolicy
 
 
 def _pick_root_metrics(snapshot: Dict[str, Any]) -> Dict[str, Any]:
@@ -49,6 +51,8 @@ def build_tuning_plane_bundle(
     effects_store: EffectStore,
     stabilization_state: StabilizationState,
     policy: Dict[str, Any],
+    promotion_policy: PromotionPolicy | None = None,
+    rollback_ledger: List[Dict[str, Any]] | None = None,
 ) -> Dict[str, Any]:
     """
     v1.1 tuning-plane router:
@@ -109,6 +113,11 @@ def build_tuning_plane_bundle(
 
     tuning_irs: List[Dict[str, Any]] = []
     per_module: Dict[str, Any] = {}
+    promotion_reports: Dict[str, Any] = {}
+
+    # Load promotion policy (if available)
+    if promotion_policy is None:
+        promotion_policy = PromotionPolicy.load()
 
     for module_id, entry in _module_entries(registry_snapshot):
         env = (entry or {}).get("tuning_envelope") or {}
@@ -125,6 +134,25 @@ def build_tuning_plane_bundle(
         )
 
         clamped, clamp_report = clamp_exploit_assignments(assignments=proposed, tuning_envelope=env, risk_policy=rp)
+
+        # v2.2: Compute promotion influence (read-only, shadow-only)
+        influence_report = compute_promotion_influence(
+            portfolio=proposed,
+            notes=notes,
+            promotion_policy=promotion_policy,
+            effects_store=effects_store,
+            baseline_signature=baseline,
+            rollback_ledger=rollback_ledger,
+        )
+        promotion_reports[str(module_id)] = {
+            "candidates_total": influence_report.candidates_total,
+            "promotion_biased": influence_report.promotion_biased,
+            "selected_with_promotion": influence_report.selected_with_promotion,
+            "rollback_rate_promoted": influence_report.rollback_rate_promoted,
+            "rollback_rate_unpromoted": influence_report.rollback_rate_unpromoted,
+            "dormant_promotions": influence_report.dormant_promotions,
+            "promotion_lift": influence_report.promotion_lift,
+        }
 
         # Convert to tuning IR (exploit only; explore is just a flag in v1.1 here)
         ir = {
@@ -148,7 +176,7 @@ def build_tuning_plane_bundle(
 
     return _lock_bundle(
         {
-            "schema_version": "tuning-plane-bundle/1.1",
+            "schema_version": "tuning-plane-bundle/1.2",
             "bundle_hash": "",
             "source_cycle_id": str(source_cycle_id),
             "baseline_signature": dict(baseline),
@@ -162,6 +190,7 @@ def build_tuning_plane_bundle(
                 "risk_policy": rp.__dict__,
                 "modules": per_module,
             },
+            "promotion_report": promotion_reports,
             "provenance": provenance,
         }
     )

@@ -12,7 +12,7 @@ from .stabilization import (
     tick_cycle,
 )
 from .tuning_apply import HotApplyResult, hot_apply_tuning_ir
-from .portfolio_apply import PortfolioHotApplyResult, hot_apply_portfolio_tuning_ir
+from .portfolio_apply import PortfolioApplyResult, apply_portfolio_tuning_ir
 
 __all__ = [
     "CapabilityToken",
@@ -25,6 +25,6 @@ __all__ = [
     "tick_cycle",
     "HotApplyResult",
     "hot_apply_tuning_ir",
-    "PortfolioHotApplyResult",
-    "hot_apply_portfolio_tuning_ir",
+    "PortfolioApplyResult",
+    "apply_portfolio_tuning_ir",
 ]

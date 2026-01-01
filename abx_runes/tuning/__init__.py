@@ -8,16 +8,6 @@ from .types import (
 )
 from .validator import validate_tuning_ir_against_envelope
 
-# Portfolio (v0.4)
-from .portfolio import (
-    PortfolioTuningIR,
-    PortfolioBudgets,
-    PortfolioObjectiveWeights,
-    PortfolioCandidate,
-    PortfolioSelection,
-    select_portfolio,
-)
-
 __all__ = [
     "KnobKind",
     "KnobSpec",
@@ -26,10 +16,4 @@ __all__ = [
     "TuningIR",
     "TuningMode",
     "validate_tuning_ir_against_envelope",
-    "PortfolioTuningIR",
-    "PortfolioBudgets",
-    "PortfolioObjectiveWeights",
-    "PortfolioCandidate",
-    "PortfolioSelection",
-    "select_portfolio",
 ]
