@@ -1,7 +1,7 @@
 .PHONY: yggdrasil yggdrasil-lint bridge-patch-lint bridge-unlockability-lint evidence-relock test portfolio-test
 
 # Override if needed:
-PY ?= python
+PY ?= python3
 
 yggdrasil:
 	PYTHONPATH=. $(PY) scripts/gen_yggdrasil_manifest.py --repo-root . --out yggdrasil.manifest.json --source-commit $$(git rev-parse HEAD 2>/dev/null || echo unknown)
@@ -21,13 +21,13 @@ evidence-relock:
 	PYTHONPATH=. $(PY) scripts/evidence_relock.py --bundle "$$BUNDLE"
 
 test:
-	pytest -q
+	$(PY) -m pytest -q
 
 tuning-plane-test:
-	pytest -q tests/test_tuning_plane_validator.py tests/test_tuning_plane_hot_apply.py
+	$(PY) -m pytest -q tests/test_tuning_plane_validator.py tests/test_tuning_plane_hot_apply.py
 
 portfolio-test:
-	pytest -q tests/test_effects_store_roundtrip.py tests/test_significance_gate_z.py
+	$(PY) -m pytest -q tests/test_effects_store_roundtrip.py tests/test_significance_gate_z.py
 
 docs:
 	@echo "Docs present: docs/TUNING_PLANE.md"
