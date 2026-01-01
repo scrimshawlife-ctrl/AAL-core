@@ -2,79 +2,82 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass
-from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from bus.provenance import append_jsonl, hash_event
+from abx_runes.tuning.hashing import canonical_json_dumps
 
 
-def _default_ledger_dir() -> Path:
-    # Keep tuning-plane artifacts under .aal by default (local, repo-root scoped).
-    return Path(".aal") / "ledger"
+DEFAULT_LEDGER_PATH = Path(".aal/evidence_ledger.jsonl")
 
 
-def _utc_iso() -> str:
-    return datetime.now(timezone.utc).isoformat()
+@dataclass(frozen=True)
+class LedgerAppendResult:
+    idx: int
+    entry: Dict[str, Any]
 
 
-@dataclass
 class EvidenceLedger:
     """
-    Append-only JSONL evidence ledger with a simple monotonic index counter.
+    Minimal append-only JSONL evidence ledger.
 
-    Each append writes one line:
-      {"idx": int, "utc": str, "type": str, "payload": {...}, "provenance": {...}, "hash": str}
+    - Deterministic serialization (sorted keys, compact separators)
+    - Monotonic integer idx (derived from file tail)
     """
 
-    ledger_path: Path = _default_ledger_dir() / "evidence_ledger.jsonl"
-    counter_path: Path = _default_ledger_dir() / "counter.json"
+    def __init__(self, path: Path = DEFAULT_LEDGER_PATH):
+        self.path = path
+        self.path.parent.mkdir(parents=True, exist_ok=True)
 
-    def _read_counter(self) -> int:
+    def _read_last_idx(self) -> int:
+        if not self.path.exists():
+            return -1
         try:
-            if not self.counter_path.exists():
-                return 0
-            raw = json.loads(self.counter_path.read_text(encoding="utf-8"))
-            return int(raw.get("idx", 0) or 0)
+            with self.path.open("rb") as f:
+                f.seek(0, 2)
+                size = f.tell()
+                if size <= 0:
+                    return -1
+                # Read last ~64KB to find final line.
+                f.seek(max(0, size - 65536), 0)
+                tail = f.read().decode("utf-8", errors="replace")
+            lines = [ln for ln in tail.splitlines() if ln.strip()]
+            if not lines:
+                return -1
+            last = json.loads(lines[-1])
+            return int(last.get("idx", -1))
         except Exception:
-            # If counter is corrupted, fail safe by treating as empty.
-            return 0
+            return -1
 
-    def _write_counter(self, idx: int) -> None:
-        self.counter_path.parent.mkdir(parents=True, exist_ok=True)
-        self.counter_path.write_text(json.dumps({"idx": int(idx)}, sort_keys=True), encoding="utf-8")
-
-    def append(self, *, entry_type: str, payload: Dict[str, Any], provenance: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
-        prev = self._read_counter()
-        idx = prev + 1
-        event: Dict[str, Any] = {
+    def append(
+        self,
+        *,
+        entry_type: str,
+        payload: Dict[str, Any],
+        provenance: Optional[Dict[str, Any]] = None,
+    ) -> LedgerAppendResult:
+        last = self._read_last_idx()
+        idx = last + 1
+        entry = {
+            "schema_version": "evidence-ledger/0.1",
             "idx": idx,
-            "utc": _utc_iso(),
-            "type": str(entry_type),
+            "entry_type": str(entry_type),
             "payload": payload or {},
             "provenance": provenance or {},
         }
-        event["hash"] = hash_event(event)
+        self.path.parent.mkdir(parents=True, exist_ok=True)
+        with self.path.open("a", encoding="utf-8") as f:
+            f.write(canonical_json_dumps(entry) + "\n")
+        return LedgerAppendResult(idx=idx, entry=entry)
 
-        append_jsonl(self.ledger_path, event)
-        self._write_counter(idx)
-        return event
-
-    def tail(self, n: int) -> List[Dict[str, Any]]:
-        if n <= 0:
+    def read_tail(self, n: int = 1) -> List[Dict[str, Any]]:
+        if n <= 0 or not self.path.exists():
             return []
-        if not self.ledger_path.exists():
+        try:
+            with self.path.open("r", encoding="utf-8") as f:
+                lines = [ln for ln in f.read().splitlines() if ln.strip()]
+            out = [json.loads(ln) for ln in lines[-n:]]
+            return out
+        except Exception:
             return []
-        lines = self.ledger_path.read_text(encoding="utf-8").splitlines()
-        out: List[Dict[str, Any]] = []
-        for ln in lines[-n:]:
-            ln = ln.strip()
-            if not ln:
-                continue
-            try:
-                out.append(json.loads(ln))
-            except json.JSONDecodeError:
-                # Skip malformed lines (append-only; don't brick scan).
-                continue
-        return out
 
