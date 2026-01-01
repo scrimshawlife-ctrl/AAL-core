@@ -25,6 +25,12 @@ class KnobSpec:
     enum_values: Optional[Tuple[str, ...]] = None
     default: Optional[Any] = None
 
+    # Experiment planning metadata (v0.9; backward-compatible defaults).
+    experimentable: bool = False
+    risk_units: float = 1.0
+    expected_latency_bump_ms_p95: float = 0.0
+    exploration_priority: float = 0.0
+
     def to_dict(self) -> Dict[str, Any]:
         d = asdict(self)
         if self.enum_values is not None:
@@ -84,6 +90,7 @@ class TuningIR:
     node_id: str
     assignments: Dict[str, KnobValue]
     reason_tags: Tuple[str, ...] = ()
+    evidence_bundle_hash: str = ""  # v0.2: required by ERS if mode==promoted_tune
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -95,4 +102,5 @@ class TuningIR:
             "node_id": self.node_id,
             "assignments": dict(self.assignments),
             "reason_tags": list(self.reason_tags),
+            "evidence_bundle_hash": self.evidence_bundle_hash,
         }
