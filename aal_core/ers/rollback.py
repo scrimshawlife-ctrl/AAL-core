@@ -1,44 +1,60 @@
 from __future__ import annotations
 
-from typing import Any, Dict, Optional
+from dataclasses import dataclass
+from typing import Any, Callable, Dict, Optional
 
 from .tuning_apply import HotApplyResult, hot_apply_tuning_ir
 
 
+@dataclass(frozen=True)
+class RollbackResult:
+    attempted: Dict[str, Any]
+    applied: Dict[str, Any]
+    rejected: Dict[str, str]
+
+
 def rollback_to_previous(
     *,
-    source_cycle_id: str,
     module_id: str,
+    source_cycle_id: str,
     node_id: str,
-    reverted_assignments: Dict[str, Any],
     tuning_envelope: Dict[str, Any],
     capability,
     stabilization_state,
+    prev_assignments: Dict[str, Any],
+    revert_keys: Dict[str, Any],
     cycle_boundary: bool = True,
-    reason_tags: Optional[list[str]] = None,
-) -> HotApplyResult:
+    apply_fn: Optional[Callable[..., HotApplyResult]] = None,
+) -> RollbackResult:
     """
-    ERS v1.2: explicit rollback action (first-class).
+    First-class ERS rollback action.
+
+    revert_keys are the keys we want to revert (typically the canary-applied keys).
+    prev_assignments provides the prior values to restore.
     """
-    tags = list(reason_tags or [])
-    if "rollback_v1.2" not in tags:
-        tags.append("rollback_v1.2")
+    reverted: Dict[str, Any] = {}
+    for k in (revert_keys or {}).keys():
+        if k in (prev_assignments or {}):
+            reverted[k] = prev_assignments[k]
 
     rb_ir = {
         "schema_version": "tuning-ir/0.1",
-        "ir_hash": "rollback-placeholder",
-        "source_cycle_id": str(source_cycle_id),
+        "ir_hash": "",
+        "source_cycle_id": source_cycle_id,
         "mode": "applied_tune",
-        "module_id": str(module_id),
-        "node_id": str(node_id),
-        "assignments": dict(reverted_assignments or {}),
-        "reason_tags": tags,
+        "module_id": module_id,
+        "node_id": node_id,
+        "assignments": reverted,
+        "reason_tags": ["rollback_v1.2"],
     }
-    return hot_apply_tuning_ir(
+
+    fn = hot_apply_tuning_ir if apply_fn is None else apply_fn
+    res = fn(
         tuning_ir=rb_ir,
         tuning_envelope=tuning_envelope,
         capability=capability,
         stab=stabilization_state,
         cycle_boundary=cycle_boundary,
     )
+    return RollbackResult(attempted=reverted, applied=res.applied, rejected=res.rejected)
 

@@ -4,41 +4,24 @@ from dataclasses import dataclass
 from typing import Any, Dict, Optional
 
 
-def _ratio(now: Optional[float], prev: Optional[float]) -> Optional[float]:
-    if now is None or prev is None:
-        return None
-    p = float(prev)
-    if p == 0.0:
-        return None
-    return float(now) / p
-
-
 @dataclass(frozen=True)
 class DriftReport:
     """
-    Deterministic drift classifier for canary rollback.
+    Deterministic drift evaluation between two metric snapshots.
 
-    Notes:
-    - We treat increases in latency/error/cost as bad, and drops in throughput as bad.
-    - The `degraded_score` is a simple (deterministic) fraction of triggered checks.
+    degraded_score is in [0, 1] and represents the fraction of checked metrics
+    that violated rollback thresholds.
     """
 
-    latency_ratio: Optional[float]
-    error_ratio: Optional[float]
-    cost_ratio: Optional[float]
-    throughput_ratio: Optional[float]
-
-    latency_spike: bool
-    error_spike: bool
-    cost_spike: bool
-    throughput_drop: bool
-
-    degraded_score: float
     degraded_mode: bool
+    degraded_score: float
+    checks: Dict[str, Dict[str, Any]]
 
-    # extra context for debugging / evidence
-    prev_metrics: Dict[str, Any]
-    now_metrics: Dict[str, Any]
+
+def _ratio(now: float, prev: float) -> Optional[float]:
+    if prev == 0:
+        return None
+    return float(now) / float(prev)
 
 
 def compute_drift(
@@ -52,46 +35,55 @@ def compute_drift(
     degraded_score_threshold: float = 0.35,
 ) -> DriftReport:
     """
-    Compute deterministic drift report from two metrics snapshots.
+    Explicit, policy-controlled rollback thresholds.
+
+    Expected metrics (if present):
+    - latency_ms_p95: higher is worse (rollback if now/prev > latency_spike_ratio)
+    - error_rate:     higher is worse (rollback if now/prev > error_spike_ratio)
+    - cost_units:     higher is worse (rollback if now/prev > cost_spike_ratio)
+    - throughput_per_s: lower is worse (rollback if now/prev < throughput_drop_ratio)
     """
-    prev = prev_metrics or {}
-    now = now_metrics or {}
 
-    prev_lat = prev.get("latency_ms_p95")
-    now_lat = now.get("latency_ms_p95")
-    prev_err = prev.get("error_rate")
-    now_err = now.get("error_rate")
-    prev_cost = prev.get("cost_units")
-    now_cost = now.get("cost_units")
-    prev_tp = prev.get("throughput_per_s")
-    now_tp = now.get("throughput_per_s")
+    checks: Dict[str, Dict[str, Any]] = {}
+    violated = 0
+    considered = 0
 
-    lat_r = _ratio(now_lat, prev_lat)
-    err_r = _ratio(now_err, prev_err)
-    cost_r = _ratio(now_cost, prev_cost)
-    tp_r = _ratio(now_tp, prev_tp)
+    def _check_spike(name: str, limit: float) -> None:
+        nonlocal violated, considered
+        if name not in (prev_metrics or {}) or name not in (now_metrics or {}):
+            return
+        pv = prev_metrics.get(name)
+        nv = now_metrics.get(name)
+        if not isinstance(pv, (int, float)) or not isinstance(nv, (int, float)):
+            return
+        r = _ratio(float(nv), float(pv))
+        v = (r is not None) and (r > float(limit))
+        checks[name] = {"kind": "spike", "prev": float(pv), "now": float(nv), "ratio": r, "limit": float(limit), "violated": v}
+        considered += 1
+        if v:
+            violated += 1
 
-    latency_spike = bool(lat_r is not None and lat_r >= float(latency_spike_ratio))
-    error_spike = bool(err_r is not None and err_r >= float(error_spike_ratio))
-    cost_spike = bool(cost_r is not None and cost_r >= float(cost_spike_ratio))
-    throughput_drop = bool(tp_r is not None and tp_r <= float(throughput_drop_ratio))
+    def _check_drop(name: str, floor: float) -> None:
+        nonlocal violated, considered
+        if name not in (prev_metrics or {}) or name not in (now_metrics or {}):
+            return
+        pv = prev_metrics.get(name)
+        nv = now_metrics.get(name)
+        if not isinstance(pv, (int, float)) or not isinstance(nv, (int, float)):
+            return
+        r = _ratio(float(nv), float(pv))
+        v = (r is not None) and (r < float(floor))
+        checks[name] = {"kind": "drop", "prev": float(pv), "now": float(nv), "ratio": r, "floor": float(floor), "violated": v}
+        considered += 1
+        if v:
+            violated += 1
 
-    checks = [latency_spike, error_spike, cost_spike, throughput_drop]
-    degraded_score = float(sum(1 for c in checks if c)) / float(len(checks))
-    degraded_mode = bool(degraded_score >= float(degraded_score_threshold))
+    _check_spike("latency_ms_p95", latency_spike_ratio)
+    _check_spike("error_rate", error_spike_ratio)
+    _check_spike("cost_units", cost_spike_ratio)
+    _check_drop("throughput_per_s", throughput_drop_ratio)
 
-    return DriftReport(
-        latency_ratio=lat_r,
-        error_ratio=err_r,
-        cost_ratio=cost_r,
-        throughput_ratio=tp_r,
-        latency_spike=latency_spike,
-        error_spike=error_spike,
-        cost_spike=cost_spike,
-        throughput_drop=throughput_drop,
-        degraded_score=degraded_score,
-        degraded_mode=degraded_mode,
-        prev_metrics=dict(prev),
-        now_metrics=dict(now),
-    )
+    degraded_score = 0.0 if considered == 0 else float(violated) / float(considered)
+    degraded_mode = degraded_score >= float(degraded_score_threshold)
+    return DriftReport(degraded_mode=degraded_mode, degraded_score=degraded_score, checks=checks)
 

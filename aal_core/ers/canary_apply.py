@@ -6,10 +6,9 @@ from typing import Any, Callable, Dict, Optional
 from abx_runes.tuning.hashing import content_hash
 
 from .baseline import compute_baseline_signature
-from .drift_sentinel import compute_drift
+from .drift_sentinel import DriftReport, compute_drift
 from .effects_store import EffectStore, record_effect
 from .rollback import rollback_to_previous
-from .rollback_ir import RollbackIR
 from .tuning_apply import HotApplyResult, hot_apply_tuning_ir
 
 
@@ -19,6 +18,7 @@ class CanaryResult:
     rolled_back: bool
     rollback_ir: Optional[Dict[str, Any]]
     reason: str
+    drift: Optional[Dict[str, Any]] = None
 
 
 def canary_apply_tuning_ir(
@@ -28,20 +28,15 @@ def canary_apply_tuning_ir(
     capability,
     stabilization_state,
     effects_store: EffectStore,
-    get_metrics_snapshot: Callable[[], Dict[str, Dict[str, Any]]],
-    get_current_assignments: Callable[[str], Dict[str, Any]],
+    get_metrics_snapshot: Callable[[], Dict[str, Dict[str, Any]]],  # returns dict(module_id -> metrics dict)
+    get_current_assignments: Callable[[str], Dict[str, Any]],  # returns dict(knob -> value)
     cycle_boundary: bool,
     policy: Dict[str, Any],
-    apply_fn: Callable[..., HotApplyResult] = hot_apply_tuning_ir,
+    apply_fn: Optional[Callable[..., HotApplyResult]] = None,
 ) -> CanaryResult:
     """
-    ERS v1.2:
     Apply a tuning IR as a canary, observe drift for a deterministic number of cycles,
-    and rollback if drift worsens beyond explicit policy thresholds.
-
-    Negative evidence recording:
-    - On rollback, we still record deltas into EffectStore (deltas should be "bad" for
-      the relevant metrics), so the optimizer learns "this hurts" under that baseline.
+    and rollback if drift worsens beyond explicit, policy-controlled thresholds.
     """
     module_id = str(tuning_ir.get("module_id", ""))
     node_id = str(tuning_ir.get("node_id", ""))
@@ -49,15 +44,20 @@ def canary_apply_tuning_ir(
     if not assigns:
         return CanaryResult(applied=False, rolled_back=False, rollback_ir=None, reason="empty_assignments")
 
-    # baseline snapshot + signature (bucket key)
-    before_all = get_metrics_snapshot() or {}
-    before = dict((before_all.get(module_id) or {}) or {})
+    before = (get_metrics_snapshot() or {}).get(module_id, {}) or {}
     baseline = compute_baseline_signature(before)
 
-    prev_assignments = dict((get_current_assignments(module_id) or {}) or {})
+    prev_assignments = get_current_assignments(module_id) or {}
+    if not prev_assignments:
+        # Fallback hook (optional): caller may supply a deterministic cached view.
+        cached = (policy.get("prev_assignments_by_module") or {}).get(module_id)
+        if isinstance(cached, dict):
+            prev_assignments = cached
 
-    # apply canary
-    apply_fn(
+    fn = hot_apply_tuning_ir if apply_fn is None else apply_fn
+
+    # canary apply
+    fn(
         tuning_ir=tuning_ir,
         tuning_envelope=tuning_envelope,
         capability=capability,
@@ -65,14 +65,13 @@ def canary_apply_tuning_ir(
         cycle_boundary=cycle_boundary,
     )
 
-    # observe N cycles deterministically (simple polling hook for now)
-    canary_cycles = int(policy.get("canary_cycles", 2) or 2)
+    # observe N cycles deterministically
+    canary_cycles = int(policy.get("canary_cycles", 2))
     after = before
     for _ in range(max(1, canary_cycles)):
-        snap = get_metrics_snapshot() or {}
-        after = dict((snap.get(module_id) or {}) or after)
+        after = (get_metrics_snapshot() or {}).get(module_id, after) or after
 
-    drift = compute_drift(
+    drift: DriftReport = compute_drift(
         prev_metrics=before,
         now_metrics=after,
         latency_spike_ratio=float(policy.get("rollback_latency_spike_ratio", 1.10)),
@@ -82,59 +81,77 @@ def canary_apply_tuning_ir(
         degraded_score_threshold=float(policy.get("rollback_degraded_score_threshold", 0.35)),
     )
 
-    def _record_all_effects() -> None:
+    # Always record effects for learning continuity.
+    # On rollback we additionally record an explicit penalty metric.
+    def _record_for_attempt(*, penalty: bool) -> None:
         for k, v in assigns.items():
             record_effect(
                 effects_store,
                 module_id=module_id,
-                knob=str(k),
+                knob=k,
                 value=v,
                 baseline_signature=baseline,
                 before_metrics=before,
                 after_metrics=after,
             )
+            if penalty:
+                record_effect(
+                    effects_store,
+                    module_id=module_id,
+                    knob=k,
+                    value=v,
+                    baseline_signature=baseline,
+                    before_metrics={"rollback_penalty": 0.0},
+                    after_metrics={"rollback_penalty": 1.0},
+                )
 
     if drift.degraded_mode:
-        # rollback: revert each changed knob to prior value if known
-        reverted: Dict[str, Any] = {}
-        for k in assigns.keys():
-            if k in prev_assignments:
-                reverted[k] = prev_assignments[k]
-
-        if reverted:
-            rollback_to_previous(
-                source_cycle_id=str(tuning_ir.get("source_cycle_id", "")),
-                module_id=module_id,
-                node_id=node_id,
-                reverted_assignments=reverted,
-                tuning_envelope=tuning_envelope,
-                capability=capability,
-                stabilization_state=stabilization_state,
-                cycle_boundary=cycle_boundary,
-                reason_tags=["rollback_v1.2"],
-            )
-
-        # record negative evidence (deltas) for the attempted value
-        _record_all_effects()
-
-        rb = RollbackIR(
-            schema_version="rollback-ir/0.1",
-            rollback_hash="",
-            source_cycle_id=str(tuning_ir.get("source_cycle_id", "")),
+        rb_res = rollback_to_previous(
             module_id=module_id,
-            baseline_signature=baseline,
-            tuning_ir_hash=str(tuning_ir.get("ir_hash", "")),
-            reason=dict(drift.__dict__),
-            reverted_assignments=dict(reverted),
-            provenance={
+            source_cycle_id=str(tuning_ir.get("source_cycle_id", "")),
+            node_id=node_id,
+            tuning_envelope=tuning_envelope,
+            capability=capability,
+            stabilization_state=stabilization_state,
+            prev_assignments=prev_assignments,
+            revert_keys=assigns,
+            cycle_boundary=cycle_boundary,
+            apply_fn=apply_fn,
+        )
+
+        _record_for_attempt(penalty=True)
+
+        rb = {
+            "schema_version": "rollback-ir/0.1",
+            "rollback_hash": "",
+            "source_cycle_id": str(tuning_ir.get("source_cycle_id", "")),
+            "module_id": module_id,
+            "baseline_signature": baseline,
+            "tuning_ir_hash": str(tuning_ir.get("ir_hash", "")),
+            "reason": {
+                "degraded_mode": drift.degraded_mode,
+                "degraded_score": drift.degraded_score,
+                "checks": drift.checks,
+            },
+            "reverted_assignments": dict(rb_res.attempted),
+            "provenance": {
                 "before_hash": content_hash(before),
                 "after_hash": content_hash(after),
             },
-        ).to_dict()
-        rb["rollback_hash"] = content_hash({**rb, "rollback_hash": ""})
-        return CanaryResult(applied=True, rolled_back=True, rollback_ir=rb, reason="rolled_back")
+        }
+        rb["rollback_hash"] = content_hash(rb, blank_fields=("rollback_hash",))
 
-    # success: record effects as usual (learning continues)
-    _record_all_effects()
-    return CanaryResult(applied=True, rolled_back=False, rollback_ir=None, reason="committed")
+        # Ledger continuity: append rollback artifact.
+        effects_store.artifacts.append(dict(rb))
+
+        return CanaryResult(
+            applied=True,
+            rolled_back=True,
+            rollback_ir=rb,
+            reason="rolled_back",
+            drift=rb["reason"],
+        )
+
+    _record_for_attempt(penalty=False)
+    return CanaryResult(applied=True, rolled_back=False, rollback_ir=None, reason="committed", drift=None)
 

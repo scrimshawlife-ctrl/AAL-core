@@ -6,10 +6,6 @@ from typing import Any, Dict
 
 @dataclass(frozen=True)
 class RollbackIR:
-    """
-    ERS v1.2: first-class rollback artifact for ledger continuity.
-    """
-
     schema_version: str
     rollback_hash: str
     source_cycle_id: str
