@@ -36,9 +36,9 @@ def test_ascend_blocked_for_analysis_only_overlay():
         "/invoke/abraxas",
         json={"phase": "ASCEND", "data": {"op": "hash", "value": "hello"}}
     )
-    # Should fail because ASCEND is not in abraxas manifest phases
-    assert r.status_code == 400
-    assert "Invalid phase" in r.json()["detail"]
+    # Phase is present, but policy must deny due to missing 'exec' capability.
+    assert r.status_code == 403
+    assert "exec" in r.json()["detail"]
 
 
 def test_exec_overlay_lists_ascend_phase():
@@ -57,7 +57,7 @@ def test_exec_overlay_lists_ascend_phase():
 
 
 def test_analysis_overlay_does_not_list_ascend():
-    """Test that abraxas (analysis-only) does NOT list ASCEND."""
+    """Test that abraxas (analysis-only) lists ASCEND but lacks 'exec'."""
     r = client.get("/overlays")
     assert r.status_code == 200
 
@@ -66,9 +66,9 @@ def test_analysis_overlay_does_not_list_ascend():
     assert len(abraxas) == 1
 
     overlay = abraxas[0]
-    assert "ASCEND" not in overlay["phases"]
     assert "exec" not in overlay["capabilities"]
     assert "analysis" in overlay["capabilities"]
+    assert "ASCEND" in overlay["phases"]
 
 
 def test_exec_overlay_can_use_clear_phase():
