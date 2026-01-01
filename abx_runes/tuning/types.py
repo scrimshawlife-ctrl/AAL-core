@@ -25,6 +25,12 @@ class KnobSpec:
     enum_values: Optional[Tuple[str, ...]] = None
     default: Optional[Any] = None
 
+    # Experiment planning metadata (v0.9; backward-compatible defaults).
+    experimentable: bool = False
+    risk_units: float = 1.0
+    expected_latency_bump_ms_p95: float = 0.0
+    exploration_priority: float = 0.0
+
     def to_dict(self) -> Dict[str, Any]:
         d = asdict(self)
         if self.enum_values is not None:
