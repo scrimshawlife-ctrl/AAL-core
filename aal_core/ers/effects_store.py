@@ -1,7 +1,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Dict, Optional, Tuple
+import json
+import math
+from pathlib import Path
+from typing import Any, Dict, Optional, Tuple, Union
 
 
 @dataclass
@@ -67,6 +70,9 @@ class EffectStore:
         for k, v in raw.items():
             out.stats_by_key[str(k)] = RunningStats.from_dict(v or {})
         return out
+
+    def to_jsonable(self) -> Dict[str, Any]:
+        return self.to_dict()
 
 
 def _baseline_items(baseline_sig: Dict[str, str]) -> str:
@@ -155,4 +161,36 @@ def get_legacy_effect_stats(
     """
     key = _k(module_id, knob, value, metric_name=metric_name, baseline_sig=None)
     return store.stats_by_key.get(key)
+
+
+def variance(s: RunningStats) -> Optional[float]:
+    return s.variance()
+
+
+def stderr(s: RunningStats) -> Optional[float]:
+    """
+    Standard error of the mean: sqrt(var / n) using the store's deterministic variance.
+    """
+    v = s.variance()
+    if v is None:
+        return None
+    if s.n <= 0:
+        return None
+    if v <= 0.0:
+        return 0.0
+    return math.sqrt(float(v) / float(s.n))
+
+
+def save_effects(store: EffectStore, path: Union[str, Path]) -> None:
+    p = Path(path)
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text(json.dumps(store.to_dict(), indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+
+def load_effects(path: Union[str, Path] = ".aal/effects_store.json") -> EffectStore:
+    p = Path(path)
+    if not p.exists():
+        return EffectStore()
+    d = json.loads(p.read_text(encoding="utf-8"))
+    return EffectStore.from_dict(d or {})
 
