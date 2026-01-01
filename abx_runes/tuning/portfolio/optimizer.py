@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Any, Dict, List, Optional, Tuple
 
 from aal_core.ers.effects_store import EffectStore, get_effect_stats
+from aal_core.ers.safe_set_store import SafeSetStore, safe_set_key
 
 
 def _candidate_values_for_knob(spec: Dict[str, Any]) -> List[Any]:
@@ -45,6 +46,8 @@ def build_portfolio(
     baseline_signature: Dict[str, str],
     metric_name: str = "latency_ms_p95",
     allow_shadow_only: bool = False,
+    safe_set_mode: bool = False,
+    safe_set_store: SafeSetStore | None = None,
 ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
     """
     Bucket-aware portfolio selection (v0.7).
@@ -61,6 +64,8 @@ def build_portfolio(
     shadow_only: Dict[str, Any] = {}
     excluded: Dict[str, str] = {}
 
+    safe_set_store = safe_set_store or SafeSetStore.load()
+
     # Deterministic traversal
     for spec in sorted(knobs, key=lambda k: str(k.get("name"))):
         name = str(spec.get("name"))
@@ -68,6 +73,26 @@ def build_portfolio(
         if not candidates:
             excluded[name] = "no_candidates"
             continue
+
+        # Optional safe-set bias: if a derived safe-set exists for this knob/bucket,
+        # prefer candidates inside it.
+        if safe_set_mode:
+            skey = safe_set_key(module_id=module_id, knob=name, baseline_signature=baseline_signature)
+            derived = safe_set_store.get(skey, now_idx=0)
+            if derived:
+                filtered = list(candidates)
+                if derived.get("kind") == "enum":
+                    allowed = {str(v) for v in (derived.get("safe_values") or [])}
+                    filtered = [v for v in candidates if str(v) in allowed]
+                elif derived.get("kind") == "numeric":
+                    mn = derived.get("safe_min")
+                    mx = derived.get("safe_max")
+                    try:
+                        filtered = [v for v in candidates if float(mn) <= float(v) <= float(mx)]
+                    except Exception:
+                        filtered = []
+                if filtered:
+                    candidates = filtered
 
         best_val: Optional[Any] = None
         best_score: Optional[float] = None
