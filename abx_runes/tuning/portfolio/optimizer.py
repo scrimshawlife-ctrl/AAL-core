@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Any, Dict, List, Optional, Tuple
 
 from aal_core.ers.effects_store import EffectStore, get_effect_stats
+from aal_core.runtime.promotion_overlay import PromotionOverlay, apply_promoted_defaults
 
 
 def _candidate_values_for_knob(spec: Dict[str, Any]) -> List[Any]:
@@ -45,6 +46,8 @@ def build_portfolio(
     baseline_signature: Dict[str, str],
     metric_name: str = "latency_ms_p95",
     allow_shadow_only: bool = False,
+    promotion_overlay: PromotionOverlay | None = None,
+    policy: Dict[str, Any] | None = None,
 ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
     """
     Bucket-aware portfolio selection (v0.7).
@@ -57,9 +60,16 @@ def build_portfolio(
     module_id = str(tuning_envelope.get("module_id"))
     knobs = list(tuning_envelope.get("knobs") or [])
 
+    policy = policy or {}
+    promotion_overlay = promotion_overlay or PromotionOverlay.load(
+        bias_weight=float(policy.get("promotion_bias_weight", 0.15))
+    )
+
     applied: Dict[str, Any] = {}
     shadow_only: Dict[str, Any] = {}
     excluded: Dict[str, str] = {}
+    promotion_candidates_boosted = 0
+    promotion_knobs_selected = 0
 
     # Deterministic traversal
     for spec in sorted(knobs, key=lambda k: str(k.get("name"))):
@@ -87,8 +97,18 @@ def build_portfolio(
             if m is None:
                 continue
             # minimize mean delta (negative is better if latency decreases)
-            if best_score is None or m < best_score or (m == best_score and str(v) < str(best_val)):
-                best_score = m
+            bias = promotion_overlay.score_bias(
+                module_id=module_id,
+                knob=name,
+                value=v,
+                baseline_signature=baseline_signature,
+            )
+            if bias:
+                promotion_candidates_boosted += 1
+            score = float(m) - float(bias)
+
+            if best_score is None or score < best_score or (score == best_score and str(v) < str(best_val)):
+                best_score = score
                 best_val = v
 
         if best_val is None:
@@ -100,6 +120,28 @@ def build_portfolio(
             continue
 
         applied[name] = best_val
+        pv = promotion_overlay.get_promoted_value(
+            module_id=module_id,
+            knob=name,
+            baseline_signature=baseline_signature,
+        )
+        if pv is not None and str(pv) == str(best_val):
+            promotion_knobs_selected += 1
+
+    # Default starting assignments (baseline-scoped, does not override explicit picks)
+    applied_with_defaults = apply_promoted_defaults(
+        module_id=module_id,
+        baseline_signature=baseline_signature,
+        current_assignments=applied,
+        knobs=knobs,
+        overlay=promotion_overlay,
+    )
+    promoted_defaults_applied = sorted(list(set(applied_with_defaults.keys()) - set(applied.keys())))
+    # If we ended up applying a promoted default, it's no longer "excluded" or "shadow-only" for that knob.
+    for name in promoted_defaults_applied:
+        excluded.pop(name, None)
+        shadow_only.pop(name, None)
+    applied = applied_with_defaults
 
     notes = {
         "module_id": module_id,
@@ -107,6 +149,9 @@ def build_portfolio(
         "baseline_signature": dict(baseline_signature),
         "excluded": excluded,
         "shadow_only": shadow_only,
+        "promotion_candidates_boosted": int(promotion_candidates_boosted),
+        "promotion_knobs_selected": int(promotion_knobs_selected),
+        "promoted_defaults_applied": promoted_defaults_applied,
     }
     return applied, notes
 
