@@ -509,19 +509,39 @@ EXPORTS = [
 ## 🗺️ Roadmap
 
 ### Current Focus
-- ✅ All major subsystems merged and integrated
-- ✅ Comprehensive documentation complete
-- 🔄 Integration testing in progress
-- 🔄 Performance optimization
+
+- ✅ Governed adaptive core complete
+  - Shadow metrics, ERS tuning plane, Safe-Sets, Promotion lifecycle
+  - Canon vs Runtime overlays, deterministic execution, rollback discipline
+- 🔄 Deterministic invariance & governance testing
+  - Multi-run stability, rollback correctness, decay behavior
+- 🔄 Runtime safety hardening
+  - Concurrency caps, risk budgets, safe-set enforcement
 
 ### Coming Soon
-- [ ] Distributed overlay execution
-- [ ] Enhanced monitoring dashboard
-- [ ] Kubernetes deployment manifests
-- [ ] Advanced policy composition
-- [ ] Machine learning-based recommendations
 
-See [TODO.md](TODO.md) for detailed task list.
+- ⬜ Promotion influence reporting
+  - Measure and report promotion bias impact per tuning cycle
+- ⬜ Distributed overlay execution
+  - Governed execution of runtime overlays across nodes
+- ⬜ Advanced policy composition
+  - Policy as composable, deterministic IR
+- ⬜ Enhanced monitoring dashboard
+  - Read-only observability for drift, governance, and safety state
+- ⬜ Kubernetes deployment manifests
+  - Deployment support after invariance and safety guarantees
+- ⬜ Machine learning–based recommendations
+  - Shadow-only, non-authoritative inputs (never auto-promoted)
+
+See TODO.md for a detailed task list.
+
+### Design Principles (Non-Negotiable)
+
+- **Governance precedes optimization**
+- **Shadow ≠ Promotion**
+- **Canon ≠ Runtime**
+- **Safety is evidence-derived, not rule-asserted**
+- **All adaptive behavior must be reversible**
 
 ## 🤝 Contributing
 
