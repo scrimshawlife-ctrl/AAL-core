@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Dict, Optional, Tuple
+import json
+from pathlib import Path
+from typing import Any, Dict, Optional, Tuple, Union
 
 
 @dataclass
@@ -67,6 +69,22 @@ class EffectStore:
         for k, v in raw.items():
             out.stats_by_key[str(k)] = RunningStats.from_dict(v or {})
         return out
+
+
+def save_effects(store: EffectStore, path: Union[str, Path]) -> None:
+    p = Path(path)
+    p.parent.mkdir(parents=True, exist_ok=True)
+    with p.open("w", encoding="utf-8") as f:
+        json.dump(store.to_dict(), f, ensure_ascii=False, sort_keys=True, indent=2)
+
+
+def load_effects(path: Union[str, Path]) -> EffectStore:
+    p = Path(path)
+    if not p.exists():
+        return EffectStore()
+    with p.open("r", encoding="utf-8") as f:
+        d = json.load(f) or {}
+    return EffectStore.from_dict(d)
 
 
 def _baseline_items(baseline_sig: Dict[str, str]) -> str:
