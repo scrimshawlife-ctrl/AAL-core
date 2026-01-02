@@ -55,6 +55,17 @@ def validate_scene(scene: LumaSceneIR) -> ValidationResult:
             errors.append("edges must be tuple[...] or not_computable")
     else:
         for ed in scene.edges:
+            # Transfer contract: must connect explicit domain entities and carry a numeric magnitude.
+            if ed.kind == "transfer":
+                if not (ed.source_id.startswith("domain:") and ed.target_id.startswith("domain:")):
+                    errors.append(f"transfer edge must connect domain:* entities: {ed.edge_id}")
+                sd = ed.source_id.split("domain:", 1)[-1]
+                td = ed.target_id.split("domain:", 1)[-1]
+                if not sd or not td or sd == NC or td == NC:
+                    errors.append(f"transfer edge missing source/target domain: {ed.edge_id}")
+                if not isinstance(ed.resonance_magnitude, (int, float)):
+                    errors.append(f"transfer edge resonance_magnitude must be numeric: {ed.edge_id}")
+
             if (
                 isinstance(ed.resonance_magnitude, (int, float))
                 and float(ed.resonance_magnitude) < 0.0
