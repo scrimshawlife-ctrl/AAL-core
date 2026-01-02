@@ -30,6 +30,21 @@ Each pattern defines:
 - **Animation plan**: `timeline`
 - **Failure**: `no_timeline`
 
+#### Temporal Braid (static SVG band)
+
+**Purpose:** Make time legible as a multi-lane braid of motif activity.
+
+**Inputs (payload):**
+- `timeline`: `list[{t, motifs}]`
+  - `t`: epoch seconds (`int|float`) or ISO timestamp string (UTC assumed if no tz)
+  - `motifs`: `list[str]` motif identifiers (names)
+
+**Visual semantics (static renderer):**
+- X-axis encodes time across the provided timeline steps.
+- Each lane corresponds to a motif (from `payload.motifs`).
+- Each step is a vertical “knot”; motif presence at a step is shown by a lane tick.
+- No implied causality; braid expresses temporal co-occurrence only.
+
 ### Resonance Field (`resonance_field/v1`)
 
 - **Fields**: scalar field grid
