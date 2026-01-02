@@ -20,8 +20,17 @@ Each pattern defines:
 
 ### Domain Lattice (`domain_lattice/v1`)
 
+- **Purpose**: establish a stable visual coordinate system for domain/subdomain structure.
 - **Entities**: domain + subdomain tiles (no edges)
-- **Failure**: `no_domains`
+- **Constraints (optional)**:
+  - `constraints.domain_order: [domain_id...]`
+  - `constraints.subdomain_order: { domain_id: [subdomain_id...] }`
+- **Visual semantics (canonical)**:
+  - Each domain is a column (left-to-right)
+  - Subdomains stack top-to-bottom inside the domain column
+  - The lattice is an instrumentation layer; it must not imply importance unless explicitly encoded via scene semantics.
+- **Failure**:
+  - `no_domains` (empty domain set)
 
 ### Temporal Braid (`temporal_braid/v1`)
 
