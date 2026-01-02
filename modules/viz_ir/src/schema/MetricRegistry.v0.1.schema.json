@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aal.local/schema/MetricRegistry.v0.1",
+  "title": "MetricRegistry.v0.1",
+  "type": "object",
+  "required": ["schema", "version", "descriptors"],
+  "properties": {
+    "schema": { "const": "MetricRegistry.v0.1" },
+    "version": { "type": "string" },
+    "descriptors": {
+      "type": "array",
+      "items": { "$ref": "MetricDescriptor.v0.1.schema.json" }
+    }
+  },
+  "additionalProperties": false
+}

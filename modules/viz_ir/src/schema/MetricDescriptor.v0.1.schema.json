@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aal.local/schema/MetricDescriptor.v0.1",
+  "title": "MetricDescriptor.v0.1",
+  "type": "object",
+  "required": ["schema", "key", "value_type"],
+  "properties": {
+    "schema": { "const": "MetricDescriptor.v0.1" },
+    "key": { "type": "string" },
+    "value_type": { "enum": ["scalar", "vector"] },
+    "tags": { "type": ["array", "null"], "items": { "type": "string" } },
+    "units": { "type": ["string", "null"] },
+    "notes": { "type": ["string", "null"] },
+    "normalization": {
+      "type": ["object", "null"],
+      "properties": {
+        "recommended_op": { "enum": ["identity", "clip01", "minmax", "log1p", "sigmoid", "zscore_if_stats"] },
+        "min": { "type": ["number", "null"] },
+        "max": { "type": ["number", "null"] }
+      },
+      "additionalProperties": false
+    },
+    "stats_hint": {
+      "type": ["object", "null"],
+      "properties": {
+        "min": { "type": ["number", "null"] },
+        "max": { "type": ["number", "null"] },
+        "mean": { "type": ["number", "null"] },
+        "std": { "type": ["number", "null"] }
+      },
+      "additionalProperties": false
+    },
+    "vector_hint": {
+      "type": ["object", "null"],
+      "properties": {
+        "length": { "type": ["integer", "null"] },
+        "labels": { "type": ["array", "null"], "items": { "type": "string" } }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

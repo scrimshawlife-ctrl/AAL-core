@@ -1,0 +1,125 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aal.local/schema/VizPackDiff.v0.1",
+  "title": "VizPackDiff.v0.1",
+  "type": "object",
+  "required": ["schema", "a_id", "b_id", "integrity", "structure", "binding", "drift"],
+  "properties": {
+    "schema": { "const": "VizPackDiff.v0.1" },
+    "a_id": { "type": "string" },
+    "b_id": { "type": "string" },
+    "integrity": {
+      "type": "object",
+      "required": ["viz_ir_hash", "policy_hash", "binding_report_hash", "registry_version"],
+      "properties": {
+        "viz_ir_hash": { "$ref": "#/$defs/delta_str" },
+        "policy_hash": { "$ref": "#/$defs/delta_str" },
+        "binding_report_hash": { "$ref": "#/$defs/delta_str" },
+        "registry_version": { "$ref": "#/$defs/delta_str" }
+      },
+      "additionalProperties": false
+    },
+    "structure": {
+      "type": "object",
+      "required": ["layers", "items", "item_types", "layer_ids"],
+      "properties": {
+        "layers": { "$ref": "#/$defs/delta_int" },
+        "items": { "$ref": "#/$defs/delta_int" },
+        "item_types": {
+          "type": "object",
+          "additionalProperties": { "$ref": "#/$defs/delta_int" }
+        },
+        "layer_ids": {
+          "type": "object",
+          "required": ["added", "removed"],
+          "properties": {
+            "added": { "type": "array", "items": { "type": "string" } },
+            "removed": { "type": "array", "items": { "type": "string" } }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "binding": {
+      "type": "object",
+      "required": ["channels"],
+      "properties": {
+        "channels": {
+          "type": "object",
+          "required": ["R", "S", "N", "K", "C"],
+          "properties": {
+            "R": { "$ref": "#/$defs/bind_delta" },
+            "S": { "$ref": "#/$defs/bind_delta" },
+            "N": { "$ref": "#/$defs/bind_delta" },
+            "K": { "$ref": "#/$defs/bind_delta" },
+            "C": { "$ref": "#/$defs/bind_delta" }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "drift": {
+      "type": "object",
+      "required": ["risk", "reasons"],
+      "properties": {
+        "risk": { "type": "number" },
+        "reasons": { "type": "array", "items": { "type": "string" } }
+      },
+      "additionalProperties": false
+    }
+  },
+  "$defs": {
+    "delta_str": {
+      "type": "object",
+      "required": ["a", "b", "changed"],
+      "properties": {
+        "a": { "type": ["string", "null"] },
+        "b": { "type": ["string", "null"] },
+        "changed": { "type": "boolean" }
+      },
+      "additionalProperties": false
+    },
+    "delta_int": {
+      "type": "object",
+      "required": ["a", "b", "delta"],
+      "properties": {
+        "a": { "type": "integer" },
+        "b": { "type": "integer" },
+        "delta": { "type": "integer" }
+      },
+      "additionalProperties": false
+    },
+    "bind_delta": {
+      "type": "object",
+      "required": ["metric_key", "used_fallback", "transform", "changed"],
+      "properties": {
+        "metric_key": { "$ref": "#/$defs/delta_str" },
+        "used_fallback": {
+          "type": "object",
+          "required": ["a", "b", "changed"],
+          "properties": {
+            "a": { "type": ["boolean", "null"] },
+            "b": { "type": ["boolean", "null"] },
+            "changed": { "type": "boolean" }
+          },
+          "additionalProperties": false
+        },
+        "transform": {
+          "type": "object",
+          "required": ["a", "b", "changed"],
+          "properties": {
+            "a": { "type": ["object", "null"] },
+            "b": { "type": ["object", "null"] },
+            "changed": { "type": "boolean" }
+          },
+          "additionalProperties": false
+        },
+        "changed": { "type": "boolean" }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}
