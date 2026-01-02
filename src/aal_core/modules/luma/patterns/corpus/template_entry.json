@@ -1,0 +1,23 @@
+{
+  "id": "corpus:not_computable",
+  "pattern_kind": "not_computable",
+  "data_shape": "not_computable",
+  "symbolic_meaning": "not_computable",
+  "visual_mapping": {
+    "position": "no implied meaning unless specified",
+    "edge_thickness": "resonance_magnitude",
+    "transparency": "uncertainty",
+    "glyphs": "abx_runes_only"
+  },
+  "when_not_to_use": [
+    "not_computable"
+  ],
+  "failure_modes": [
+    "not_computable"
+  ],
+  "provenance": {
+    "source_frame_provenance": "not_computable",
+    "evidence": "not_computable"
+  }
+}
+
