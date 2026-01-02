@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aal.local/schema/LODPolicy.v0.1",
+  "title": "LODPolicy.v0.1",
+  "type": "object",
+  "required": ["schema", "rules"],
+  "properties": {
+    "schema": { "const": "LODPolicy.v0.1" },
+    "rules": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "when", "actions"],
+        "properties": {
+          "id": { "type": "string" },
+          "when": {
+            "type": "object",
+            "properties": {
+              "zoom_lte": { "type": ["number", "null"] },
+              "zoom_gte": { "type": ["number", "null"] },
+              "max_items_gte": { "type": ["integer", "null"] }
+            },
+            "additionalProperties": false
+          },
+          "actions": {
+            "type": "object",
+            "properties": {
+              "hide_layers": { "type": ["array", "null"], "items": { "type": "string" } },
+              "hide_item_types": { "type": ["array", "null"], "items": { "type": "string" } },
+              "labels": { "enum": ["all", "none", "compact"] },
+              "edge_mode": { "enum": ["full", "bundled", "macro"] }
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

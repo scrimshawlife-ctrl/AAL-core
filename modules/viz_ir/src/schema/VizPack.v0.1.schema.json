@@ -1,0 +1,84 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aal.local/schema/VizPack.v0.1",
+  "title": "VizPack.v0.1",
+  "type": "object",
+  "required": ["schema", "id", "created_at", "engine", "payload", "provenance"],
+  "properties": {
+    "schema": { "const": "VizPack.v0.1" },
+    "id": { "type": "string" },
+    "created_at": { "type": "string" },
+    "engine": {
+      "type": "object",
+      "required": ["name", "version"],
+      "properties": {
+        "name": { "type": "string" },
+        "version": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "payload": {
+      "type": "object",
+      "required": ["viz_ir"],
+      "properties": {
+        "viz_ir": { "type": "object" },
+        "layout_ir": { "type": ["object", "null"] },
+        "view_state": { "type": ["object", "null"] },
+        "lod_policy": { "type": ["object", "null"] },
+        "binding_spec": { "type": ["object", "null"] },
+        "metric_registry": { "type": ["object", "null"] },
+        "frame_pack": { "type": ["object", "null"] },
+        "renders": {
+          "type": ["object", "null"],
+          "properties": {
+            "svg": { "type": ["string", "null"] },
+            "png_ref": { "type": ["string", "null"] }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "integrity": {
+      "type": "object",
+      "properties": {
+        "binding_report_hash": { "type": ["string", "null"] },
+        "viz_ir_hash": { "type": ["string", "null"] },
+        "layout_ir_hash": { "type": ["string", "null"] },
+        "policy_hash": { "type": ["string", "null"] }
+      },
+      "additionalProperties": false
+    },
+    "provenance": {
+      "type": "object",
+      "required": ["inputs", "build"],
+      "properties": {
+        "inputs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name", "hash"],
+            "properties": {
+              "name": { "type": "string" },
+              "hash": { "type": "string" },
+              "notes": { "type": ["string", "null"] }
+            },
+            "additionalProperties": false
+          }
+        },
+        "build": {
+          "type": "object",
+          "required": ["deterministic", "seed"],
+          "properties": {
+            "deterministic": { "type": "boolean" },
+            "seed": { "type": "string" },
+            "platform": { "type": ["string", "null"] }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

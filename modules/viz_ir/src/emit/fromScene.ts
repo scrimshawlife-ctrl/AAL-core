@@ -1,4 +1,5 @@
 import type { VizIR, Layer, BaseItem, Style } from "../types/vizir";
+import type { LayoutIR } from "../layout/types";
 import { sortItemsDeterministic, sortLayersDeterministic } from "../utils/sort";
 import { roundN } from "../utils/round";
 
@@ -27,6 +28,7 @@ export type FromSceneOptions = {
   canvas_h?: number;
   title?: string;
   layout?: "provided" | "grid" | "lane";
+  layout_ir?: LayoutIR | null;
   grid?: {
     cols?: number;
     cell_w?: number;
@@ -78,6 +80,18 @@ function getProvidedPos(e: SceneEntity): XY | null {
   const y = num(a.y ?? a.pos?.y);
   if (x === null || y === null) return null;
   return { x, y };
+}
+
+function getLayoutPosMap(layout: LayoutIR | null | undefined): Record<string, XY> {
+  if (!layout?.nodes) return {};
+  const map: Record<string, XY> = {};
+  for (const node of layout.nodes) {
+    const x = num(node.x);
+    const y = num(node.y);
+    if (x === null || y === null) continue;
+    map[node.entity_id] = { x, y };
+  }
+  return map;
 }
 
 function defaultCanvas(opts: FromSceneOptions) {
@@ -211,9 +225,15 @@ export function vizIrFromScene(scene: SceneV0, opts: FromSceneOptions = {}): Viz
   const showLabels = opts.node?.show_labels ?? true;
 
   const pos: Record<string, XY> = {};
+  const layoutPos = getLayoutPosMap(opts.layout_ir);
   const entities = (scene.entities || []).slice().sort((a, b) => (a.entity_id < b.entity_id ? -1 : a.entity_id > b.entity_id ? 1 : 0));
 
   for (const e of entities) {
+    const fromLayout = layoutPos[e.entity_id];
+    if (fromLayout) {
+      pos[e.entity_id] = fromLayout;
+      continue;
+    }
     const p = getProvidedPos(e);
     if (p) pos[e.entity_id] = p;
   }

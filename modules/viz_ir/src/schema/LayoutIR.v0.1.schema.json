@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aal.local/schema/LayoutIR.v0.1",
+  "title": "LayoutIR.v0.1",
+  "type": "object",
+  "required": ["schema", "canvas", "nodes"],
+  "properties": {
+    "schema": { "const": "LayoutIR.v0.1" },
+    "canvas": {
+      "type": "object",
+      "required": ["w", "h", "unit"],
+      "properties": {
+        "w": { "type": "number" },
+        "h": { "type": "number" },
+        "unit": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "meta": {
+      "type": "object",
+      "properties": {
+        "title": { "type": ["string", "null"] },
+        "provenance": { "type": ["object", "null"] }
+      },
+      "additionalProperties": true
+    },
+    "nodes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["entity_id", "x", "y"],
+        "properties": {
+          "entity_id": { "type": "string" },
+          "x": { "type": "number" },
+          "y": { "type": "number" },
+          "lane": { "type": ["string", "null"] },
+          "order": { "type": ["integer", "null"] },
+          "label": { "type": ["object", "null"] }
+        },
+        "additionalProperties": true
+      }
+    },
+    "lanes": {
+      "type": ["array", "null"],
+      "items": {
+        "type": "object",
+        "required": ["id", "y", "h"],
+        "properties": {
+          "id": { "type": "string" },
+          "label": { "type": ["string", "null"] },
+          "y": { "type": "number" },
+          "h": { "type": "number" }
+        },
+        "additionalProperties": true
+      }
+    },
+    "routes": {
+      "type": ["array", "null"],
+      "items": {
+        "type": "object",
+        "required": ["edge_id", "d"],
+        "properties": {
+          "edge_id": { "type": "string" },
+          "d": { "type": "string" },
+          "via": { "type": ["array", "null"], "items": { "type": "string" } }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}
