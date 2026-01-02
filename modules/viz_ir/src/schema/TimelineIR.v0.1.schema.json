@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aal.local/schema/TimelineIR.v0.1",
+  "title": "TimelineIR.v0.1",
+  "type": "object",
+  "required": ["schema", "frames", "cursor"],
+  "properties": {
+    "schema": { "const": "TimelineIR.v0.1" },
+    "frames": {
+      "type": "object",
+      "required": ["count", "fps"],
+      "properties": {
+        "count": { "type": "integer", "minimum": 1 },
+        "fps": { "type": "number", "minimum": 1 }
+      },
+      "additionalProperties": false
+    },
+    "cursor": {
+      "type": "object",
+      "required": ["mode"],
+      "properties": {
+        "mode": { "enum": ["index", "time"] },
+        "index": { "type": ["integer", "null"] },
+        "time_s": { "type": ["number", "null"] }
+      },
+      "additionalProperties": false
+    },
+    "segments": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "start", "end"],
+        "properties": {
+          "id": { "type": "string" },
+          "start": { "type": "integer" },
+          "end": { "type": "integer" },
+          "label": { "type": ["string", "null"] }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

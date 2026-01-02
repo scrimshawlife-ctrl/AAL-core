@@ -1,0 +1,14 @@
+<svg width="800" height="600" viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg">
+  <rect width="800" height="600" fill="#f4f4f6"/>
+  <g id="sankey_transfer">
+    <path d="M200 200 C 300 200 360 240 450 260" stroke="#7b5cff" stroke-width="4" fill="none"/>
+  </g>
+  <g id="motifs">
+    <circle cx="200" cy="200" r="26" fill="#0b84ff"/>
+    <text x="200" y="205" text-anchor="middle" font-size="12" fill="#ffffff">motif:anchor</text>
+    <circle cx="450" cy="260" r="26" fill="#00c08b"/>
+    <text x="450" y="265" text-anchor="middle" font-size="12" fill="#ffffff">motif:flux</text>
+    <circle cx="320" cy="420" r="26" fill="#ffb547"/>
+    <text x="320" y="425" text-anchor="middle" font-size="12" fill="#1b1b1b">motif:veil</text>
+  </g>
+</svg>

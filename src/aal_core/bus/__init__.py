@@ -9,6 +9,7 @@ Contains:
 from __future__ import annotations
 
 import json
+from collections import deque
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional
@@ -51,10 +52,19 @@ class EventBus:
     def get_recent_events(self, limit: int = 100) -> List[Dict[str, Any]]:
         if not self._log_path or not self._log_path.exists():
             return []
+        if limit <= 0:
+            return []
+        events: deque[Dict[str, Any]] = deque(maxlen=limit)
         with open(self._log_path, "r", encoding="utf-8") as f:
-            lines = f.readlines()
-        return [json.loads(line) for line in lines[-limit:]]
+            for line in f:
+                stripped = line.strip()
+                if not stripped:
+                    continue
+                try:
+                    events.append(json.loads(stripped))
+                except json.JSONDecodeError:
+                    continue
+        return list(events)
 
 
 __all__ = ["EventBus"]
-

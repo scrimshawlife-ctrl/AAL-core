@@ -1,0 +1,94 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aal.local/schema/VizIR.v0.1",
+  "title": "VizIR.v0.1",
+  "type": "object",
+  "required": ["schema", "meta", "canvas", "layers"],
+  "properties": {
+    "schema": { "const": "VizIR.v0.1" },
+    "meta": {
+      "type": "object",
+      "required": ["title"],
+      "properties": {
+        "title": { "type": "string" },
+        "run_id": { "type": ["string", "null"] },
+        "provenance": { "type": ["object", "null"] }
+      },
+      "additionalProperties": true
+    },
+    "canvas": {
+      "type": "object",
+      "required": ["w", "h", "unit"],
+      "properties": {
+        "w": { "type": "number" },
+        "h": { "type": "number" },
+        "unit": { "enum": ["px"] }
+      },
+      "additionalProperties": false
+    },
+    "layers": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/layer" }
+    },
+    "legend": {
+      "type": "array",
+      "items": { "type": "object" }
+    },
+    "interactions": { "type": ["object", "null"] }
+  },
+  "$defs": {
+    "layer": {
+      "type": "object",
+      "required": ["id", "z", "items"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "z": { "type": "integer" },
+        "opacity": { "type": ["number", "null"] },
+        "items": { "type": "array", "items": { "$ref": "#/$defs/item" } }
+      },
+      "additionalProperties": false
+    },
+    "style": {
+      "type": "object",
+      "properties": {
+        "stroke": { "type": ["string", "null"] },
+        "fill": { "type": ["string", "null"] },
+        "stroke_w": { "type": ["number", "null"] },
+        "opacity": { "type": ["number", "null"] },
+        "dash": { "type": ["string", "null"] },
+        "font_size": { "type": ["number", "null"] },
+        "font_family": { "type": ["string", "null"] },
+        "text_anchor": { "enum": ["start", "middle", "end", null] }
+      },
+      "additionalProperties": true
+    },
+    "a11y": {
+      "type": "object",
+      "properties": {
+        "title": { "type": ["string", "null"] },
+        "desc": { "type": ["string", "null"] }
+      },
+      "additionalProperties": false
+    },
+    "data": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "item": {
+      "type": "object",
+      "required": ["id", "type", "geom"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "type": {
+          "enum": ["rect", "circle", "line", "path", "text", "group", "node", "edge", "heatcell"]
+        },
+        "style": { "$ref": "#/$defs/style" },
+        "geom": { "type": "object" },
+        "data": { "$ref": "#/$defs/data" },
+        "a11y": { "$ref": "#/$defs/a11y" }
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": false
+}

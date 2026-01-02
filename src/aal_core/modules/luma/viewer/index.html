@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <title>LUMA Explorer</title>
+  <link rel="stylesheet" href="styles.css"/>
+</head>
+<body>
+  <header>
+    <strong>LUMA Explorer</strong>
+    <span id="scene-id"></span>
+  </header>
+
+  <section id="controls">
+    <label>
+      Time
+      <input type="range" id="time-slider" min="0" max="1000" step="1" value="0"/>
+    </label>
+    <label>
+      <input type="checkbox" id="toggle-pulse" checked/> Pulse
+    </label>
+    <label>
+      <input type="checkbox" id="toggle-decay" checked/> Decay
+    </label>
+    <label>
+      <input type="checkbox" id="toggle-transfer" checked/> Transfers
+    </label>
+  </section>
+
+  <main id="viewport">
+    <div id="compareBar" style="margin: 8px 0;">
+      <label style="display:flex; gap:8px; align-items:center; cursor:pointer;">
+        <input id="compareToggle" type="checkbox" />
+        <span>Compare Mode</span>
+      </label>
+    </div>
+
+    <div id="chronoBar" style="margin: 8px 0; display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+      <label style="display:flex; gap:8px; align-items:center; cursor:pointer;">
+        <input id="chronoToggle" type="checkbox" />
+        <span>Chronoscope</span>
+      </label>
+
+      <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+        <span style="font-weight:700;">Index</span>
+        <input id="runIndexUrl" placeholder="run index url (RunIndex.v0)"
+          style="width:320px; padding:6px 8px; border:1px solid rgba(0,0,0,0.25);" />
+        <button id="loadRunIndex" style="cursor:pointer;">load</button>
+      </div>
+
+      <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+        <span style="font-weight:700;">A</span>
+        <select id="runSelectA"></select>
+        <span style="font-weight:700;">B</span>
+        <select id="runSelectB"></select>
+        <button id="swapRuns" style="cursor:pointer;">swap</button>
+      </div>
+    </div>
+
+    <div id="compareWrap" style="display:none; gap:10px;">
+      <div style="flex:1; border:1px solid rgba(0,0,0,0.2); padding:6px;">
+        <div style="font-weight:700; margin-bottom:6px;">A</div>
+        <div id="svgContainerA"></div>
+      </div>
+      <div style="flex:1; border:1px solid rgba(0,0,0,0.2); padding:6px;">
+        <div style="font-weight:700; margin-bottom:6px;">B</div>
+        <div id="svgContainerB"></div>
+      </div>
+    </div>
+
+    <div id="singleWrap">
+      <div id="svgContainer"></div>
+    </div>
+  </main>
+
+  <aside id="inspector">
+    <pre id="inspect-json">Hover an element</pre>
+    <div id="selection-details"></div>
+    <div style="margin-top:10px; border-top:1px solid rgba(0,0,0,0.15); padding-top:10px;">
+      <div style="font-weight:700;">Search / Filter</div>
+
+      <input id="filterQuery" placeholder="search: m.1 or d.fin or transfer"
+        style="width:100%; box-sizing:border-box; margin-top:6px; padding:6px 8px; border:1px solid rgba(0,0,0,0.25);" />
+
+      <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:8px;">
+        <label style="display:flex; gap:6px; align-items:center; cursor:pointer;">
+          <input id="focusMode" type="checkbox" />
+          <span>focus</span>
+        </label>
+
+        <label style="display:flex; gap:6px; align-items:center; cursor:pointer;">
+          <input id="showLabels" type="checkbox" checked />
+          <span>labels</span>
+        </label>
+
+        <label style="display:flex; gap:6px; align-items:center; cursor:pointer;">
+          <input id="showHeatmap" type="checkbox" checked />
+          <span>heatmap</span>
+        </label>
+      </div>
+
+      <div style="margin-top:8px;">
+        <div style="font-weight:700; margin-bottom:4px;">Edges</div>
+        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+          <label style="display:flex; gap:6px; align-items:center; cursor:pointer;">
+            <input class="edgeFilter" data-edge-type="transfer" type="checkbox" checked />
+            <span>transfer</span>
+          </label>
+          <label style="display:flex; gap:6px; align-items:center; cursor:pointer;">
+            <input class="edgeFilter" data-edge-type="resonance" type="checkbox" checked />
+            <span>resonance</span>
+          </label>
+          <label style="display:flex; gap:6px; align-items:center; cursor:pointer;">
+            <input class="edgeFilter" data-edge-type="synch" type="checkbox" checked />
+            <span>synch</span>
+          </label>
+        </div>
+      </div>
+
+      <div id="filterStats" style="margin-top:8px; opacity:0.75;"></div>
+    </div>
+    <div style="margin-top:10px; border-top:1px solid rgba(0,0,0,0.15); padding-top:10px;">
+      <div style="font-weight:700;">Layers</div>
+      <div id="layerControls" style="margin-top:6px;"></div>
+
+      <div style="display:flex; gap:8px; margin-top:8px;">
+        <button id="layersAll" style="cursor:pointer;">all</button>
+        <button id="layersNone" style="cursor:pointer;">none</button>
+        <button id="layersInvert" style="cursor:pointer;">invert</button>
+      </div>
+    </div>
+    <div style="margin-top:10px; border-top:1px solid rgba(0,0,0,0.15); padding-top:10px;">
+      <div style="font-weight:700;">View State</div>
+
+      <div style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;">
+        <button id="exportViewState" style="cursor:pointer;">export</button>
+        <button id="copyViewState" style="cursor:pointer;">copy</button>
+        <button id="importViewState" style="cursor:pointer;">import</button>
+        <input id="viewStateFile" type="file" accept="application/json" style="display:none;" />
+      </div>
+
+      <textarea id="viewStateBox" placeholder="paste ViewState.v0 JSON here"
+        style="width:100%; box-sizing:border-box; margin-top:8px; height:120px; padding:8px; border:1px solid rgba(0,0,0,0.25);"></textarea>
+
+      <div id="viewStateStatus" style="margin-top:6px; opacity:0.75;"></div>
+    </div>
+    <div style="margin-top:10px; border-top:1px solid rgba(0,0,0,0.15); padding-top:10px;">
+      <div style="font-weight:700;">Diff</div>
+      <div id="diffPanel" style="margin-top:6px; white-space:pre-wrap;"></div>
+    </div>
+    <div style="margin-top:10px; border-top:1px solid rgba(0,0,0,0.15); padding-top:10px;">
+      <div style="font-weight:700;">Selection Compare (A vs B)</div>
+      <div id="selectionCompare" style="margin-top:6px; white-space:pre-wrap;"></div>
+    </div>
+    <div style="margin-top:10px; border-top:1px solid rgba(0,0,0,0.15); padding-top:10px;">
+      <div style="font-weight:700;">Trends (N runs)</div>
+
+      <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-top:8px;">
+        <input id="trendTarget" placeholder="motif id (m.12) or domain id (d.fin)"
+          style="width:260px; padding:6px 8px; border:1px solid rgba(0,0,0,0.25);" />
+        <button id="runTrends" style="cursor:pointer;">run</button>
+        <button id="copyTrends" style="cursor:pointer;">copy</button>
+      </div>
+
+      <div id="trendStatus" style="margin-top:6px; opacity:0.75;"></div>
+      <pre id="trendOut" style="margin-top:8px; white-space:pre-wrap;"></pre>
+    </div>
+  </aside>
+
+  <script src="viewer.js"></script>
+</body>
+</html>

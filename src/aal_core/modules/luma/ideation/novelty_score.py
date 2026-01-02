@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Mapping
+from typing import Any, Dict, List, Mapping
 
 
 @dataclass(frozen=True)
@@ -16,7 +16,7 @@ class NoveltyScore:
     total: float  # higher is better
 
 
-def score_proposal(
+def score_composition(
     *,
     baseline_semantics: Mapping[str, Any],
     proposal_semantics: Mapping[str, Any],
@@ -51,3 +51,52 @@ def score_proposal(
         redundancy=redundancy,
         total=total,
     )
+
+
+def _clamp(x: float, a: float = 0.0, b: float = 1.0) -> float:
+    return max(a, min(b, x))
+
+
+def score_proposal(spec: Dict[str, Any], baseline_patterns: List[str]) -> Dict[str, float]:
+    """
+    Deterministic scoring heuristics.
+    - novelty: adds a structural view not covered by baseline
+    - readability: penalize too many primitives/channels/layers
+    - redundancy: penalize overlap with baseline
+    """
+    primitives = spec.get("primitives", [])
+    layers = spec.get("layers", [])
+    channels = spec.get("channels", {})
+
+    c = len(primitives) * 0.35 + len(layers) * 0.25 + len(channels) * 0.18
+    readability = _clamp(1.0 - c)
+
+    baseline = set(baseline_patterns)
+    novelty_bonus = 0.0
+    if "matrix" in primitives and "domain_lattice" in baseline:
+        novelty_bonus += 0.22
+    if "chord" in primitives and "sankey_transfer" in baseline:
+        novelty_bonus += 0.22
+    if "heatmap" in primitives and "resonance_field" not in baseline:
+        novelty_bonus += 0.18
+    if "radial" in primitives and "motif_graph" in baseline:
+        novelty_bonus += 0.15
+    novelty = _clamp(0.35 + novelty_bonus)
+
+    redundant = 0.0
+    if "grid" in primitives and "domain_lattice" in baseline:
+        redundant += 0.25
+    if "flows" in primitives and "sankey_transfer" in baseline:
+        redundant += 0.25
+    if "timeline" in primitives and "temporal_braid" in baseline:
+        redundant += 0.25
+    redundancy = _clamp(redundant)
+
+    info_gain = _clamp(novelty * readability * (1.0 - redundancy))
+
+    return {
+        "novelty": float(novelty),
+        "readability": float(readability),
+        "redundancy": float(redundancy),
+        "info_gain": float(info_gain),
+    }
