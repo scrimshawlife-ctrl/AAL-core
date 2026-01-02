@@ -34,7 +34,8 @@ tuning-plane-test:
 portfolio-test:
 	pytest -q \
 		tests/test_effects_store_roundtrip.py \
-		tests/test_portfolio_measured_effect_gate.py
+		tests/test_portfolio_measured_effect_gate.py \
+		tests/test_promotion_report_basic.py
 
 docs:
 	@echo "Docs present: docs/TUNING_PLANE.md"
