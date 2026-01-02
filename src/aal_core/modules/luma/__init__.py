@@ -1,13 +1,4 @@
-"""
-LUMA — Lucid Universal Motif Animator
-====================================
+from .renderers.svg_static import SvgRenderConfig, SvgStaticRenderer
+from .pipeline.export import export_artifact
 
-Canonical visualization projection layer for AAL / Abraxas symbolic state.
-
-Key law: visualization is a deterministic projection of existing symbolic state.
-It MUST NOT influence analysis or prediction.
-"""
-
-from .pipeline.export import render
-
-__all__ = ["render"]
+__all__ = ["SvgStaticRenderer", "SvgRenderConfig", "export_artifact"]

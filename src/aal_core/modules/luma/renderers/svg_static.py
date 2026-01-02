@@ -1,102 +1,145 @@
 from __future__ import annotations
 
-import html
+from dataclasses import dataclass
+from typing import Any, Dict, List, Tuple
+import hashlib
 
-from ..contracts.enums import ArtifactKind, LumaMode, NotComputable
-from ..contracts.provenance import canonical_dumps
 from ..contracts.render_artifact import RenderArtifact
 from ..contracts.scene_ir import LumaSceneIR
-from .base import (
-    alpha_from_uncertainty,
-    domain_color,
-    stable_layout_points,
-    thickness_from_magnitude,
-)
-
-NC = NotComputable.VALUE.value
+from ..pipeline.validate_scene import validate_scene
 
 
-def render_svg(scene: LumaSceneIR) -> RenderArtifact:
-    pts = stable_layout_points(scene)
+@dataclass(frozen=True)
+class SvgRenderConfig:
+    width: int = 1200
+    height: int = 800
+    padding: int = 60
+    node_radius: int = 10
+    font_family: str = "ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto"
+    font_size: int = 12
 
-    # SVG canvas is centered; translate by +150 to keep positive coords.
-    w, h = 360, 360
-    cx, cy = w / 2.0, h / 2.0
 
-    # Metadata must carry full provenance anchors.
-    meta = {
-        "luma": "LUMA",
-        "scene_hash": scene.hash,
-        "source_frame_provenance": scene.to_canonical_dict(include_hash=True)[
-            "source_frame_provenance"
-        ],
-        "patterns": scene.to_canonical_dict(include_hash=True)["patterns"],
-    }
+class SvgStaticRenderer:
+    renderer_id = "luma.svg_static"
+    renderer_version = "0.1.0"
 
-    lines = []
-    lines.append(
-        f'<svg xmlns="http://www.w3.org/2000/svg" width="{w}" height="{h}" viewBox="0 0 {w} {h}">'
-    )
-    lines.append("<metadata>")
-    lines.append(html.escape(canonical_dumps(meta)))
-    lines.append("</metadata>")
-    lines.append('<rect x="0" y="0" width="100%" height="100%" fill="#0b0f14"/>')
+    def render(self, scene: LumaSceneIR, config: SvgRenderConfig | None = None) -> RenderArtifact:
+        validate_scene(scene)
+        cfg = config or SvgRenderConfig()
 
-    # edges first
-    if not isinstance(scene.edges, str):
-        for e in sorted(scene.edges, key=lambda x: x.edge_id):
-            p1 = pts.get(e.source_id)
-            p2 = pts.get(e.target_id)
-            if p1 is None or p2 is None:
+        # deterministic ordering
+        motifs = [e for e in scene.entities if e.entity_type == "motif"]
+        motifs = sorted(motifs, key=lambda e: e.entity_id)
+
+        # simple deterministic circular layout (force-directed later; this is stable + testable)
+        positions = self._circle_layout(motifs, cfg)
+
+        # edges filtered for motif graph semantics
+        edges = [ed for ed in scene.edges if ed.edge_type in ("resonance", "synch")]
+        edges = sorted(edges, key=lambda ed: (ed.edge_type, ed.source, ed.target, float(ed.weight)))
+
+        svg = self._build_svg(scene, cfg, positions, edges)
+        payload = svg.encode("utf-8")
+        bytes_sha = hashlib.sha256(payload).hexdigest()
+
+        scene_hash = scene.stable_hash()
+        artifact_id = f"{scene.scene_id}:{scene_hash[:12]}:{self.renderer_id}"
+
+        return RenderArtifact(
+            artifact_id=artifact_id,
+            artifact_type="svg",
+            scene_hash=scene_hash,
+            renderer_id=self.renderer_id,
+            renderer_version=self.renderer_version,
+            bytes_sha256=bytes_sha,
+            media_mime="image/svg+xml",
+            payload_bytes=payload,
+            provenance={
+                "scene_provenance": scene.provenance,
+                "constraints": scene.constraints,
+                "seed": scene.seed,
+                "renderer": {"id": self.renderer_id, "version": self.renderer_version},
+            },
+            meta={"width": cfg.width, "height": cfg.height, "layout": "circle_v0"},
+            warnings=None,
+        )
+
+    def _circle_layout(self, motifs, cfg: SvgRenderConfig) -> Dict[str, Tuple[float, float]]:
+        import math
+
+        cx, cy = cfg.width / 2, cfg.height / 2
+        r = min(cfg.width, cfg.height) / 2 - cfg.padding
+        n = max(1, len(motifs))
+        pos: Dict[str, Tuple[float, float]] = {}
+        for i, e in enumerate(motifs):
+            theta = (2 * math.pi * i) / n
+            x = cx + r * math.cos(theta)
+            y = cy + r * math.sin(theta)
+            pos[e.entity_id] = (x, y)
+        return pos
+
+    def _build_svg(
+        self,
+        scene: LumaSceneIR,
+        cfg: SvgRenderConfig,
+        positions: Dict[str, Tuple[float, float]],
+        edges,
+    ) -> str:
+        # Build deterministic SVG (no random ids)
+        w, h = cfg.width, cfg.height
+        title = f"LUMA: {scene.scene_id}"
+
+        def esc(s: str) -> str:
+            return (
+                s.replace("&", "&amp;")
+                .replace("<", "&lt;")
+                .replace(">", "&gt;")
+                .replace('"', "&quot;")
+                .replace("'", "&#39;")
+            )
+
+        # background + legend space
+        parts: List[str] = []
+        parts.append(
+            f'<svg xmlns="http://www.w3.org/2000/svg" width="{w}" height="{h}" viewBox="0 0 {w} {h}">'
+        )
+        parts.append(f'<rect x="0" y="0" width="{w}" height="{h}" fill="white"/>')
+        parts.append(
+            f'<text x="{cfg.padding}" y="{cfg.padding-20}" font-family="{cfg.font_family}" font-size="{cfg.font_size+4}">{esc(title)}</text>'
+        )
+        parts.append(
+            f'<text x="{cfg.padding}" y="{cfg.padding}" font-family="{cfg.font_family}" font-size="{cfg.font_size}" opacity="0.7">scene_hash={scene.stable_hash()[:16]}…</text>'
+        )
+
+        # edges
+        for ed in edges:
+            if ed.source not in positions or ed.target not in positions:
                 continue
-            col = domain_color(e.domain)
-            sw = 1.0
-            if isinstance(e.resonance_magnitude, (int, float)):
-                sw = thickness_from_magnitude(float(e.resonance_magnitude))
-            alpha = 0.9
-            if isinstance(e.uncertainty, (int, float)):
-                alpha = alpha_from_uncertainty(float(e.uncertainty))
-            x1 = cx + p1.x
-            y1 = cy + p1.y
-            x2 = cx + p2.x
-            y2 = cy + p2.y
-            lines.append(
+            x1, y1 = positions[ed.source]
+            x2, y2 = positions[ed.target]
+            # thickness maps to weight (bounded)
+            thickness = max(1.0, min(8.0, 1.0 + 7.0 * float(ed.weight)))
+            opacity = max(0.15, min(0.9, 0.15 + 0.75 * float(ed.weight)))
+            stroke = "#111" if ed.edge_type == "resonance" else "#444"
+            parts.append(
                 f'<line x1="{x1:.2f}" y1="{y1:.2f}" x2="{x2:.2f}" y2="{y2:.2f}" '
-                f'stroke="{col}" stroke-width="{sw:.2f}" stroke-opacity="{alpha:.3f}"/>'
+                f'stroke="{stroke}" stroke-width="{thickness:.2f}" opacity="{opacity:.3f}"/>'
             )
 
-    # nodes
-    if not isinstance(scene.entities, str):
-        for ent in sorted(scene.entities, key=lambda x: x.entity_id):
-            p = pts.get(ent.entity_id)
-            if p is None:
-                continue
-            col = domain_color(ent.domain)
-            r = 7.5 if ent.kind in ("motif", "subdomain") else 9.5
-            x = cx + p.x
-            y = cy + p.y
-            lines.append(
-                f'<circle cx="{x:.2f}" cy="{y:.2f}" r="{r:.2f}" fill="{col}" fill-opacity="0.95"/>'
-            )
-            label = html.escape(ent.label[:28])
-            lines.append(
-                f'<text x="{x + 10.0:.2f}" y="{y + 4.0:.2f}" font-family="monospace" '
-                f'font-size="10" fill="#e6eef7" fill-opacity="0.92">{label}</text>'
+        # nodes + labels
+        for eid, (x, y) in sorted(positions.items(), key=lambda kv: kv[0]):
+            parts.append(f'<circle cx="{x:.2f}" cy="{y:.2f}" r="{cfg.node_radius}" fill="#000"/>')
+            parts.append(
+                f'<text x="{x + cfg.node_radius + 6:.2f}" y="{y + cfg.font_size/2:.2f}" '
+                f'font-family="{cfg.font_family}" font-size="{cfg.font_size}" opacity="0.85">{esc(eid)}</text>'
             )
 
-    lines.append("</svg>")
-    svg = "\n".join(lines)
-    prov = {
-        "scene_hash": scene.hash,
-        "source_frame_provenance": scene.to_canonical_dict(True)["source_frame_provenance"],
-    }
-    return RenderArtifact.from_text(
-        kind=ArtifactKind.SVG,
-        mode=LumaMode.STATIC,
-        scene_hash=scene.hash,
-        mime_type="image/svg+xml",
-        text=svg,
-        provenance=prov,
-        backend="svg_static/v1",
-        warnings=tuple(),
-    )
+        # footer provenance stamp (light)
+        parts.append(
+            f'<text x="{cfg.padding}" y="{h - cfg.padding/2:.2f}" font-family="{cfg.font_family}" font-size="{cfg.font_size-2}" opacity="0.55">'
+            f"renderer={self.renderer_id}@{self.renderer_version}"
+            f"</text>"
+        )
+
+        parts.append("</svg>")
+        return "\n".join(parts)

@@ -1,5 +1,4 @@
-from .compile_scene import compile_scene
-from .export import render
-from .validate_scene import validate_scene
+from .export import ExportResult, export_artifact
+from .validate_scene import SceneValidationError, validate_scene
 
-__all__ = ["compile_scene", "validate_scene", "render"]
+__all__ = ["validate_scene", "SceneValidationError", "export_artifact", "ExportResult"]
