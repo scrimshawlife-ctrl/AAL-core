@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aal.local/schema/FramePack.v0.1",
+  "title": "FramePack.v0.1",
+  "type": "object",
+  "required": ["schema", "meta", "timeline", "frames"],
+  "properties": {
+    "schema": { "const": "FramePack.v0.1" },
+    "meta": {
+      "type": "object",
+      "required": ["title"],
+      "properties": {
+        "title": { "type": "string" },
+        "run_id": { "type": ["string", "null"] },
+        "provenance": { "type": ["object", "null"] }
+      },
+      "additionalProperties": true
+    },
+    "timeline": { "$ref": "TimelineIR.v0.1.schema.json" },
+    "frames": {
+      "type": "object",
+      "required": ["mode", "count", "hash_alg", "hashes"],
+      "properties": {
+        "mode": { "enum": ["svg_inline", "svg_ref", "vizir_inline"] },
+        "count": { "type": "integer", "minimum": 1 },
+        "hash_alg": { "enum": ["sha256"] },
+        "hashes": {
+          "type": "array",
+          "items": { "type": "string" },
+          "minItems": 1
+        },
+        "svg_inline": {
+          "type": ["array", "null"],
+          "items": { "type": "string" }
+        },
+        "svg_ref": {
+          "type": ["array", "null"],
+          "items": {
+            "type": "object",
+            "required": ["path"],
+            "properties": {
+              "path": { "type": "string" },
+              "mime": { "type": ["string", "null"] }
+            },
+            "additionalProperties": false
+          }
+        },
+        "vizir_inline": {
+          "type": ["array", "null"],
+          "items": { "type": "object" }
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

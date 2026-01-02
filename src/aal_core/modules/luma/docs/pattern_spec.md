@@ -48,3 +48,17 @@ Each pattern defines:
 - **Semantics**: decay/halflife (if provided)
 - **Failure**: `no_motifs`
 
+### Motif×Domain Heatmap (`motif_domain_heatmap/v1`)
+
+- **Rows**: motifs (salience desc, then id)
+- **Columns**: domains (sorted by id)
+- **Cell value**: motif salience when motif.domain matches domain, else 0
+- **Semantics**: opacity encodes salience, bounded [0.05, 0.9]
+- **Failure**: `no_motifs` / `no_domains`
+
+### Transfer Chord (`transfer_chord/v1`)
+
+- **Entities**: domains (ring layout)
+- **Edges**: transfer arcs aggregated by (source_domain, target_domain)
+- **Semantics**: arc thickness/opacity encode transfer magnitude
+- **Failure**: `no_flows`
