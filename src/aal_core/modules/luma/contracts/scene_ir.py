@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from dataclasses import field
 from typing import Any, Dict, Mapping, Tuple, Union
 
 from .enums import NotComputable, PatternKind
@@ -17,6 +18,7 @@ class SceneEntity:
     domain: str
     glyph_rune_id: str  # ABX-Runes only; else "not_computable"
     metrics: Mapping[str, Union[float, str]]  # numeric or "not_computable"
+    attributes: Mapping[str, Any] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
@@ -88,7 +90,7 @@ class LumaSceneIR:
         """
 
         def _ent(e: SceneEntity) -> Dict[str, Any]:
-            return {
+            out = {
                 "entity_id": e.entity_id,
                 "kind": e.kind,
                 "label": e.label,
@@ -96,6 +98,10 @@ class LumaSceneIR:
                 "glyph_rune_id": e.glyph_rune_id,
                 "metrics": dict(sorted((str(k), v) for k, v in e.metrics.items())),
             }
+            # Optional: preserve backwards-compatible hashes when empty.
+            if e.attributes:
+                out["attributes"] = dict(sorted((str(k), v) for k, v in e.attributes.items()))
+            return out
 
         def _edge(e: SceneEdge) -> Dict[str, Any]:
             return {

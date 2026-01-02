@@ -36,3 +36,25 @@ def describe_patterns(patterns: Mapping[PatternKind, BasePattern]) -> Tuple[Patt
             )
         )
     return tuple(out)
+
+
+def register_builtins() -> Tuple[str, ...]:
+    """
+    Builtin registration point.
+
+    Note: LUMA's current architecture uses a static builtin registry
+    (`aal_core.modules.luma.registry.default_registry`). This helper exists as a
+    stable import-side "hook" and a canonical list of builtin ids.
+    """
+
+    # Import to ensure builtin modules are loaded (defensive; registry imports them too).
+    from .builtin import (  # noqa: F401
+        cluster_bloom,
+        domain_lattice,
+        motif_graph,
+        resonance_field,
+        sankey_transfer,
+        temporal_braid,
+    )
+
+    return tuple(k.value for k in PatternKind)

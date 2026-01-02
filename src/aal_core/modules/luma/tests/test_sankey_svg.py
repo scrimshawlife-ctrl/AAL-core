@@ -19,14 +19,23 @@ def _fixed_frame(payload: dict) -> dict:
     }
 
 
-def test_svg_render_is_deterministic_for_same_input():
+def test_sankey_svg_is_stable():
     frame = _fixed_frame(
         {
-            "motifs": ["alpha", "beta"],
-            "edges": [{"source": "alpha", "target": "beta", "magnitude": 9.0}],
+            "domains": [
+                {"domain": "geo", "subdomains": ["elections"]},
+                {"domain": "tech", "subdomains": ["llms"]},
+                {"domain": "fin", "subdomains": ["markets"]},
+            ],
+            "flows": [
+                {"source_domain": "tech", "target_domain": "fin", "value": 0.8},
+                {"source_domain": "geo", "target_domain": "tech", "value": 0.3},
+                {"source_domain": "geo", "target_domain": "fin", "value": 0.5},
+            ],
         }
     )
     a1 = render(frame, mode="static")[0]
     a2 = render(frame, mode="static")[0]
     assert a1.scene_hash == a2.scene_hash
     assert a1.content_sha256 == a2.content_sha256
+
