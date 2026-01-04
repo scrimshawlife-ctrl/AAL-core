@@ -12,6 +12,7 @@ from .scan import normalize_input, cleanup_temp
 from .identity import classify_identity
 from .plan import build_integration_plan, build_optimization_roadmap
 from .score import compute_gimlet_score
+from .coupling import generate_coupling_map
 
 
 def _canonical_json_dumps(obj: Any) -> str:
@@ -30,7 +31,8 @@ def inspect(
     source_path: str,
     mode: str = "inspect",
     run_seed: Optional[str] = None,
-    exclude_patterns: Optional[list[str]] = None
+    exclude_patterns: Optional[list[str]] = None,
+    generate_coupling: bool = True
 ) -> Dict[str, Any]:
     """
     Rune: gimlet.v0.inspect
@@ -42,10 +44,12 @@ def inspect(
         mode: Operating mode (inspect|integrate|optimize|report)
         run_seed: Optional deterministic seed for provenance
         exclude_patterns: Optional glob patterns to exclude
+        generate_coupling: Generate coupling map (default: True)
 
     Returns:
         Dict with:
             - result: InspectResult as dict
+            - coupling_map: CouplingMap as dict (if generate_coupling=True)
             - abx_runes: Rune provenance metadata
     """
     # Validate mode
@@ -86,11 +90,17 @@ def inspect(
             score=score
         )
 
-        # Phase 6: Attach ABX-Runes metadata
+        # Phase 6: Generate coupling map (optional)
+        coupling_map_dict = None
+        if generate_coupling:
+            coupling_map = generate_coupling_map(file_map, identity, source_path, run_seed)
+            coupling_map_dict = coupling_map.to_dict()
+
+        # Phase 7: Attach ABX-Runes metadata
         result_dict = result.to_dict()
         manifest_hash = _compute_manifest_hash(result)
 
-        return {
+        response = {
             "result": result_dict,
             "abx_runes": {
                 "used": ["gimlet.v0.inspect"],
@@ -105,6 +115,11 @@ def inspect(
                 }
             }
         }
+
+        if coupling_map_dict:
+            response["coupling_map"] = coupling_map_dict
+
+        return response
 
     finally:
         # Clean up temp directory if created

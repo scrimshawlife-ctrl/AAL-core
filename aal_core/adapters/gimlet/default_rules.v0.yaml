@@ -1,0 +1,74 @@
+schema: gimlet_rules.v0
+
+rule_ordering: "stable"
+
+defaults:
+  seed: 0
+  kind_if_unknown: "EXTERNAL"
+
+rules:
+  - id: "R001_overlay_manifest"
+    priority: 100
+    when:
+      any_path_exists:
+        - ".aal/overlays/**/manifest.json"
+    then:
+      kind: "AAL_OVERLAY"
+      couple:
+        - cap: "overlay.registry"
+          rune: "rune_registry.v0.register_overlay"
+        - cap: "provenance.hashing"
+          rune: "prov.v0.hash_artifact"
+      evidence_rules:
+        - "found_overlay_manifest"
+
+  - id: "R002_aal_core_imports"
+    priority: 90
+    when:
+      any_text_match:
+        globs:
+          - "**/*.py"
+          - "**/*.ts"
+          - "**/*.js"
+        patterns:
+          - "aal_core"
+          - "abx_runes"
+          - "yggdrasil"
+          - "rune_registry"
+    then:
+      kind: "AAL_SUBSYSTEM"
+      couple:
+        - cap: "determinism.enforce"
+          rune: "seed.v0.enforce"
+        - cap: "provenance.hashing"
+          rune: "prov.v0.hash_artifact"
+      evidence_rules:
+        - "aal_import_signal"
+
+  - id: "R003_known_viz_signals"
+    priority: 80
+    when:
+      any_path_exists:
+        - "**/viz/**"
+        - "**/visualizer/**"
+    then:
+      kind: "AAL_SUBSYSTEM"
+      couple:
+        - cap: "visualize.trends"
+          rune: "viz.v0.render_trends"
+      evidence_rules:
+        - "viz_folder_signal"
+
+  - id: "R900_default_external"
+    priority: 0
+    when:
+      always: true
+    then:
+      kind: "EXTERNAL"
+      couple:
+        - cap: "ingress.inspect"
+          rune: "gimlet.v0.inspect"
+        - cap: "provenance.hashing"
+          rune: "prov.v0.hash_artifact"
+      evidence_rules:
+        - "default_fallback"

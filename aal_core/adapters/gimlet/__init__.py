@@ -43,6 +43,14 @@ from .registry import (
     list_all_definitions,
 )
 
+from .coupling import (
+    generate_coupling_map,
+    load_rune_catalog,
+    get_rune_capabilities,
+    CouplingMap,
+    CouplingRule,
+)
+
 
 __all__ = [
     # Contracts
@@ -83,6 +91,12 @@ __all__ = [
     "enforce_registry_on_manifest",
     "get_definition",
     "list_all_definitions",
+    # Coupling
+    "generate_coupling_map",
+    "load_rune_catalog",
+    "get_rune_capabilities",
+    "CouplingMap",
+    "CouplingRule",
 ]
 
 __version__ = "0.1.0"
