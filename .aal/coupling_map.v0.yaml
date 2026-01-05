@@ -1,0 +1,35 @@
+schema: coupling_map.v0
+
+provenance:
+  artifact_hash: "<sha256>"
+  generated_by: "aal-gimlet"
+  seed: 0
+  run_id: ""
+
+policies:
+  coupling: "abx-runes-only"
+  determinism: "seeded"
+  sandbox: "capability"
+  scheduler: "ers"
+
+systems:
+  - system_id: "example_system"
+    kind: "EXTERNAL" # AAL_OVERLAY | AAL_SUBSYSTEM | EXTERNAL
+    entrypoints:
+      - "path/to/entrypoint:main"
+    capabilities:
+      - cap: "ingress.inspect"
+        rune: "gimlet.v0.inspect"
+        direction: "consume" # provide | consume | both
+        qos:
+          latency_ms_budget: 500
+          ers_priority: 3
+        io_contract:
+          in_schema: "GimletIn.v0"
+          out_schema: "GimletReport.v0"
+        evidence:
+          - path: ".git/"
+            rule: "repo_detected"
+
+notes:
+  - "This file is repo-local and may be generated or updated by AAL-Gimlet."

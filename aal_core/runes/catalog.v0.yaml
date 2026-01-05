@@ -1,0 +1,45 @@
+schema: rune_catalog.v0
+
+provenance:
+  maintained_by: "aal-core"
+  seed: 0
+
+runes:
+  - rune_id: "gimlet.v0.inspect"
+    provides:
+      - "ingress.inspect"
+      - "ingress.classify"
+      - "ingress.roadmap"
+      - "ingress.score"
+    io:
+      in: "GimletIn.v0"
+      out: "GimletReport.v0"
+
+  - rune_id: "prov.v0.hash_artifact"
+    provides:
+      - "provenance.hashing"
+    io:
+      in: "ArtifactRef.v0"
+      out: "ArtifactHash.v0"
+
+  - rune_id: "seed.v0.enforce"
+    provides:
+      - "determinism.enforce"
+      - "provenance.envelope"
+    io:
+      in: "SeedPolicy.v0"
+      out: "SeedReport.v0"
+
+  - rune_id: "ers.v0.route_plan"
+    provides:
+      - "scheduler.route"
+    io:
+      in: "RoutePlanIn.v0"
+      out: "RoutePlanOut.v0"
+
+  - rune_id: "schema.v0.validate"
+    provides:
+      - "schema.validate"
+    io:
+      in: "SchemaValidateIn.v0"
+      out: "SchemaValidateOut.v0"
