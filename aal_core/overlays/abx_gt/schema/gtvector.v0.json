@@ -1,0 +1,80 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "GTVector.v0",
+  "title": "GTVector.v0",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id","version","seed","players","game","actions","payoffs"],
+  "properties": {
+    "id": { "type": "string", "minLength": 3 },
+    "version": { "const": "0" },
+    "seed": { "type": "integer", "minimum": 0 },
+    "players": {
+      "type": "array",
+      "minItems": 2,
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "game": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name","type"],
+      "properties": {
+        "name": { "type": "string" },
+        "type": { "type": "string", "enum": ["matrix","sequential","bayesian","repeated"] },
+        "rounds": { "type": "integer", "minimum": 1, "default": 1 },
+        "discount": { "type": "number", "minimum": 0, "maximum": 1, "default": 1.0 }
+      }
+    },
+    "actions": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Action space per player",
+      "minProperties": 2,
+      "patternProperties": {
+        "^[A-Za-z0-9_\\-]+$": {
+          "type": "array",
+          "minItems": 2,
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "payoffs": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Payoff matrices or rules; keep deterministic.",
+      "required": ["representation"],
+      "properties": {
+        "representation": { "type": "string", "enum": ["matrix","rule"] },
+        "matrix": {
+          "type": "array",
+          "items": { "type": "array", "items": { "type": "number" } }
+        },
+        "rule": { "type": "string" }
+      }
+    },
+    "signals": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [],
+      "properties": {
+        "enabled": { "type": "boolean", "default": false },
+        "cost_model": { "type": "string", "enum": ["cheap","costly"], "default": "cheap" },
+        "noise": { "type": "number", "minimum": 0, "maximum": 1, "default": 0 }
+      }
+    },
+    "shocks": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": { "type": "boolean", "default": false },
+        "magnitude": { "type": "number", "minimum": 0, "default": 0 }
+      }
+    },
+    "expected_ranges": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Optional guidance",
+      "properties": {}
+    }
+  }
+}
