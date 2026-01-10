@@ -1,0 +1,21 @@
+schema_version: aal.runes.catalog.v1
+rune_id: aal.rune.game_theory.pack.v1
+name: "Game Theory Training Pack"
+category: training
+capabilities:
+  - "validate_meta_corpus"
+  - "load_test_vectors"
+  - "attach_oracle_training_digest"
+inputs:
+  - id: corpus_dir
+    type: path
+  - id: vectors_dir
+    type: path
+outputs:
+  - id: corpus_bundle
+    type: json
+  - id: vectors_bundle
+    type: json
+provenance:
+  deterministic: true
+  coupling: "abx-runes-only"
