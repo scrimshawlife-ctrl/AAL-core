@@ -1,0 +1,89 @@
+{
+  "schema_version": "aalmanac.signal.v1",
+  "generated_at_utc": "2026-01-09T00:00:00Z",
+  "inputs_hash": "golden_inputs_hash_0011223344556677",
+  "entries": [
+    {
+      "term": "ghost",
+      "term_type": "single",
+      "tokens": ["ghost"],
+      "source_class": "oracle_internal",
+      "domain_tags": ["culture", "local_LA"],
+      "sense_shift": {
+        "from_sense": "absence",
+        "to_sense": "intentional nonresponse",
+        "shift_type": "technicalization"
+      },
+      "usage_frame": "Used as a verb for deliberate disengagement or strategic silence in a relationship or thread.",
+      "example_templates": [
+        "He ghosted the group chat after the deadline.",
+        "I’m not ghosting—I’m gating attention."
+      ],
+      "scores": { "STI": 0.42, "CP": 0.78, "IPS": 0.55, "RFR": 0.61, "lambdaN": 0.33 },
+      "half_life": "months",
+      "confidence": 0.74,
+      "provenance": {
+        "engine": "aal_core",
+        "ruleset_id": "aalmanac.rules.v1",
+        "input_fingerprints": ["golden://oracle_internal/v1"],
+        "run_id": "golden_run_0001",
+        "determinism_hash": "det_hash_aa11bb22cc33dd44"
+      }
+    },
+    {
+      "term": "rent-paying",
+      "term_type": "compound",
+      "tokens": ["rent", "paying"],
+      "source_class": "oracle_internal",
+      "domain_tags": ["tech", "systems"],
+      "sense_shift": {
+        "from_sense": "literal cost",
+        "to_sense": "complexity must justify itself",
+        "shift_type": "metaphor"
+      },
+      "usage_frame": "Used to describe any feature or complexity that must produce measurable value to remain.",
+      "example_templates": [
+        "That module isn’t rent-paying yet.",
+        "If it adds steps, it owes metrics."
+      ],
+      "scores": { "STI": 0.31, "CP": 0.66, "IPS": 0.62, "RFR": 0.47, "lambdaN": 0.52 },
+      "half_life": "weeks",
+      "confidence": 0.68,
+      "provenance": {
+        "engine": "aal_core",
+        "ruleset_id": "aalmanac.rules.v1",
+        "input_fingerprints": ["golden://oracle_internal/v1"],
+        "run_id": "golden_run_0001",
+        "determinism_hash": "det_hash_aa11bb22cc33dd44"
+      }
+    }
+  ],
+  "drift_ledger": [
+    {
+      "term": "signal",
+      "term_type": "single",
+      "tokens": ["signal"],
+      "delta": {
+        "field": "sense_shift.to_sense",
+        "from": "any meaningful indicator",
+        "to": "high-density indicator with action bias",
+        "reason_code": "context_narrowing"
+      },
+      "confidence": 0.61,
+      "provenance": {
+        "engine": "aal_core",
+        "ruleset_id": "aalmanac.rules.v1",
+        "input_fingerprints": ["golden://oracle_internal/v1"],
+        "run_id": "golden_run_0001",
+        "determinism_hash": "det_hash_aa11bb22cc33dd44"
+      }
+    }
+  ],
+  "provenance": {
+    "engine": "aal_core",
+    "ruleset_id": "aalmanac.rules.v1",
+    "input_fingerprints": ["golden://oracle_internal/v1"],
+    "run_id": "golden_run_0001",
+    "determinism_hash": "det_hash_aa11bb22cc33dd44"
+  }
+}

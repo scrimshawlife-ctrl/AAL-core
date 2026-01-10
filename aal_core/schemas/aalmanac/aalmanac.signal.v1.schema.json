@@ -1,0 +1,172 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "aal_core.schemas.aalmanac.signal.v1",
+  "title": "AALmanac Signal v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "generated_at_utc", "inputs_hash", "entries", "drift_ledger", "provenance"],
+  "properties": {
+    "schema_version": { "type": "string", "const": "aalmanac.signal.v1" },
+    "generated_at_utc": { "type": "string", "format": "date-time" },
+    "inputs_hash": { "type": "string", "minLength": 16 },
+    "entries": {
+      "type": "array",
+      "minItems": 0,
+      "items": { "$ref": "#/$defs/TermRecord" }
+    },
+    "drift_ledger": {
+      "type": "array",
+      "minItems": 0,
+      "items": { "$ref": "#/$defs/DriftRecord" }
+    },
+    "provenance": { "$ref": "#/$defs/ProvenanceBundle" }
+  },
+  "$defs": {
+    "TermRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "term",
+        "term_type",
+        "tokens",
+        "source_class",
+        "domain_tags",
+        "sense_shift",
+        "usage_frame",
+        "example_templates",
+        "scores",
+        "half_life",
+        "confidence",
+        "provenance"
+      ],
+      "properties": {
+        "term": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "term_type": { "type": "string", "enum": ["single", "compound"] },
+        "tokens": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1, "maxLength": 32 }
+        },
+        "source_class": {
+          "type": "string",
+          "enum": ["news", "social", "creator", "finance", "local", "user_log", "oracle_internal"]
+        },
+        "domain_tags": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 2, "maxLength": 24 }
+        },
+        "sense_shift": { "$ref": "#/$defs/SenseShift" },
+        "usage_frame": { "type": "string", "minLength": 8, "maxLength": 240 },
+        "example_templates": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 6,
+          "items": { "type": "string", "minLength": 8, "maxLength": 140 }
+        },
+        "scores": { "$ref": "#/$defs/ScoresV1" },
+        "half_life": { "type": "string", "enum": ["hours", "days", "weeks", "months"] },
+        "confidence": { "type": "number", "minimum": 0.0, "maximum": 1.0 },
+        "provenance": { "$ref": "#/$defs/ProvenanceBundle" }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "term_type": { "const": "single" } } },
+          "then": {
+            "properties": { "tokens": { "minItems": 1, "maxItems": 1 } }
+          }
+        },
+        {
+          "if": { "properties": { "term_type": { "const": "compound" } } },
+          "then": {
+            "properties": { "tokens": { "minItems": 2 } }
+          }
+        }
+      ]
+    },
+    "DriftRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["term", "term_type", "tokens", "delta", "confidence", "provenance"],
+      "properties": {
+        "term": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "term_type": { "type": "string", "enum": ["single", "compound"] },
+        "tokens": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1, "maxLength": 32 }
+        },
+        "delta": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["field", "from", "to", "reason_code"],
+          "properties": {
+            "field": { "type": "string", "minLength": 1, "maxLength": 48 },
+            "from": {},
+            "to": {},
+            "reason_code": { "type": "string", "minLength": 2, "maxLength": 32 }
+          }
+        },
+        "confidence": { "type": "number", "minimum": 0.0, "maximum": 1.0 },
+        "provenance": { "$ref": "#/$defs/ProvenanceBundle" }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "term_type": { "const": "single" } } },
+          "then": { "properties": { "tokens": { "minItems": 1, "maxItems": 1 } } }
+        }
+      ]
+    },
+    "SenseShift": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["from_sense", "to_sense", "shift_type"],
+      "properties": {
+        "from_sense": { "type": "string", "minLength": 2, "maxLength": 48 },
+        "to_sense": { "type": "string", "minLength": 2, "maxLength": 48 },
+        "shift_type": {
+          "type": "string",
+          "enum": [
+            "metaphor",
+            "metonymy",
+            "irony",
+            "inversion",
+            "compression",
+            "generalization",
+            "narrowing",
+            "reappropriation",
+            "technicalization"
+          ]
+        }
+      }
+    },
+    "ScoresV1": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["STI", "CP", "IPS", "RFR", "lambdaN"],
+      "properties": {
+        "STI": { "type": "number", "minimum": 0.0, "maximum": 1.0 },
+        "CP": { "type": "number", "minimum": 0.0, "maximum": 1.0 },
+        "IPS": { "type": "number", "minimum": 0.0, "maximum": 1.0 },
+        "RFR": { "type": "number", "minimum": 0.0, "maximum": 1.0 },
+        "lambdaN": { "type": "number", "minimum": 0.0, "maximum": 1.0 }
+      }
+    },
+    "ProvenanceBundle": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["engine", "ruleset_id", "input_fingerprints", "run_id", "determinism_hash"],
+      "properties": {
+        "engine": { "type": "string", "minLength": 2, "maxLength": 32 },
+        "ruleset_id": { "type": "string", "minLength": 3, "maxLength": 64 },
+        "input_fingerprints": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 8, "maxLength": 128 }
+        },
+        "run_id": { "type": "string", "minLength": 8, "maxLength": 64 },
+        "determinism_hash": { "type": "string", "minLength": 16, "maxLength": 128 }
+      }
+    }
+  }
+}
