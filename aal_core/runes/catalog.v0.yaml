@@ -43,3 +43,27 @@ runes:
     io:
       in: "SchemaValidateIn.v0"
       out: "SchemaValidateOut.v0"
+
+  - id: "aalmanac.v1"
+    name: "AALmanac"
+    version: "1.0.0"
+    lane: "shadow"
+    intent: "Extract and track slang drift (single + compound) as deterministic oracle attachments."
+    io:
+      input_schema: "aal_core.schemas.aalmanac.signal.v1"
+      output_schema: "aal_core.schemas.aalmanac.signal.v1"
+    capabilities:
+      - "analyze"
+      - "catalog"
+      - "oracle_attachment"
+    coupling:
+      legal_coupling_layer: "ABX-Runes"
+      consumers:
+        - "abraxas.oracle"
+        - "neon_genie.reader"
+    determinism:
+      required: true
+      golden_tests: true
+    notes:
+      - "Tokenization contract enforced: single => exactly 1 token; compound => >=2 tokens."
+      - "Shadow-only: must never change prediction weights."

@@ -1,0 +1,18 @@
+couplings:
+  - from: "aalmanac.v1"
+    to: "abraxas.oracle"
+    mode: "attach"
+    lane: "shadow"
+    path: "oracle.attachments.aalmanac_v1"
+    rules:
+      - "deterministic_only"
+      - "not_computable_on_missing_inputs"
+      - "no_prediction_influence"
+  - from: "aalmanac.v1"
+    to: "neon_genie.reader"
+    mode: "read_only"
+    lane: "shadow"
+    path: "oracle.attachments.aalmanac_v1"
+    rules:
+      - "consumer_must_not_write_back"
+      - "admin_review_required_for_catalog_promotion"
