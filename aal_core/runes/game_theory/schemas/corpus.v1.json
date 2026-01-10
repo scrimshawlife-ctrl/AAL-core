@@ -1,0 +1,30 @@
+{
+  "schema_version": "aal.gametheory.corpus.v1",
+  "type": "object",
+  "required": ["schema_version", "generated_at_utc", "inputs_hash", "items", "provenance"],
+  "properties": {
+    "schema_version": {"type": "string"},
+    "generated_at_utc": {"type": "string"},
+    "inputs_hash": {"type": "string"},
+    "items": {
+      "type": "array",
+      "items": {"$ref": "#/definitions/CorpusItem"}
+    },
+    "provenance": {"type": "object"}
+  },
+  "definitions": {
+    "CorpusItem": {
+      "type": "object",
+      "required": ["id", "kind", "title", "payload", "links", "tags", "provenance"],
+      "properties": {
+        "id": {"type": "string"},
+        "kind": {"type": "string", "enum": ["concept", "game", "pitfall", "glossary"]},
+        "title": {"type": "string"},
+        "payload": {"type": "object"},
+        "links": {"type": "array", "items": {"type": "string"}},
+        "tags": {"type": "array", "items": {"type": "string"}},
+        "provenance": {"type": "object"}
+      }
+    }
+  }
+}
