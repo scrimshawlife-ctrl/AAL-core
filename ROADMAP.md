@@ -35,19 +35,21 @@ AAL-Core has successfully integrated all major subsystems and completed comprehe
 - **Test stabilization - Major milestone achieved**
   - Fixed all import errors (11 → 0, 100% improvement)
   - Test collection: 315 tests (100% collection rate)
-  - Test pass rate: 279 passing, 31 failing, 5 skipped
-  - **Overall health: 88.6% pass rate**
+  - Test pass rate: 282 passing, 28 failing, 5 skipped
+  - **Overall health: 89.5% pass rate** (up from 88.6%)
   - Fixed modules: effects_store, portfolio, renderers, luma pipeline
   - Migrated test_svg_hash.py to new API (SceneEntity, SceneEdge)
+  - Added RenderArtifact.from_text() factory method
+  - Added content_sha256 property for backward compatibility
+  - Fixed 3 additional rendering tests
 
 ### 🔄 In Progress
 
-- **Remaining test failures (31 tests)**
+- **Remaining test failures (28 tests)** - down from 31
   - Portfolio and ERS tests: 15 failures (effects store, optimizer, rollback)
   - Overlay and policy tests: 4 failures (ascend permissions, canary)
-  - Rendering tests: 2 failures (motif lattice, svg artifact creation)
-  - Other subsystems: 10 failures (scattered across modules)
-  - **Next:** Systematic triage and categorization
+  - Other subsystems: 9 failures (scattered across modules)
+  - **Next:** Focus on portfolio optimizer integration issues
 
 - **Code quality improvements**
   - API stabilization in progress
@@ -179,7 +181,7 @@ AAL-Core has successfully integrated all major subsystems and completed comprehe
 - ✅ All major subsystems integrated (100%)
 - ✅ Documentation coverage complete (100%)
 - ✅ Test collection rate: 315/315 (100%)
-- ✅ Test pass rate: 279/315 (88.6%)
+- ✅ Test pass rate: 282/315 (89.5%)
 - 🔄 Code quality score (pending linting setup)
 - ⏳ CI/CD pipeline operational (0%)
 

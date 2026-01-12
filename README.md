@@ -14,8 +14,8 @@
 **AAL-Core** • Deterministic Memory Governance • Overlay Orchestration • Dynamic Function Discovery
 
 [![Status](https://img.shields.io/badge/status-stabilization-yellow.svg)]()
-[![Tests](https://img.shields.io/badge/tests-279%2F315%20passing-success.svg)]()
-[![Coverage](https://img.shields.io/badge/coverage-88.6%25-green.svg)]()
+[![Tests](https://img.shields.io/badge/tests-282%2F315%20passing-success.svg)]()
+[![Coverage](https://img.shields.io/badge/coverage-89.5%25-green.svg)]()
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)]()
 [![Python](https://img.shields.io/badge/python-3.11+-blue.svg)]()
 
@@ -381,7 +381,7 @@ export AAL_PORT=8000
 
 ## 🧪 Testing
 
-**Current Status:** 315 tests, **88.6% passing** (279 pass, 31 fail, 5 skip)
+**Current Status:** 315 tests, **89.5% passing** (282 pass, 28 fail, 5 skip)
 
 ```bash
 # Run all tests
@@ -402,14 +402,17 @@ python -m pytest tests/ --co -q
 **Recent Improvements:**
 - ✅ Fixed ALL import errors (11 → 0, 100% improvement)
 - ✅ Test collection: 100% (315/315 tests)
-- ✅ Test pass rate: 88.6% (279/315 passing)
+- ✅ Test pass rate: 89.5% (282/315 passing, up from 279)
+- ✅ Added `RenderArtifact.from_text()` factory method
+- ✅ Added `content_sha256` property for backward compatibility
 - ✅ Added missing functions: `get_effect_mean`, `save_effects`, `load_effects`, `stderr`, `variance`
 - ✅ Restored `render()` function in luma pipeline
 - ✅ Added `SvgStaticRenderer` and `SvgRenderConfig` classes with proper dataclass decorators
 - ✅ Migrated test_svg_hash.py to new API (SceneEntity, SceneEdge, SourceFrameProvenance)
+- ✅ Fixed 3 additional rendering tests (svg_hash, motif_lattice)
 
 **Remaining Work:**
-- 31 test failures across portfolio, ERS, rendering, and overlay modules
+- 28 test failures across portfolio, ERS, and overlay modules (down from 31)
 - See [ROADMAP.md](ROADMAP.md) for detailed test stabilization plan
 
 ## 📚 Documentation
@@ -540,11 +543,12 @@ EXPORTS = [
 - ✅ Comprehensive documentation complete (100%)
 - ✅ ROADMAP.md created with 4-phase plan through 2026
 - ✅ **Test stabilization milestone**: Fixed ALL import errors (11 → 0)
-- ✅ **Test health**: 315 tests collected, 88.6% passing (279/315)
+- ✅ **Test health**: 315 tests collected, 89.5% passing (282/315)
 - ✅ API migration: Updated legacy tests to new SceneEntity/SceneEdge API
+- ✅ Added RenderArtifact.from_text() factory method
 
 **Current Focus:**
-- 🔄 Fix remaining 31 test failures (portfolio, ERS, rendering modules)
+- 🔄 Fix remaining 28 test failures (portfolio, ERS, overlay modules)
 - 🔄 Set up CI/CD pipeline with automated testing
 - 🔄 Memory governance wire-up and validation
 - 🔄 API stabilization and type hint coverage
