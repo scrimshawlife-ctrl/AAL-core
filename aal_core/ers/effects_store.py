@@ -37,6 +37,16 @@ class RunningStats:
         # population variance (stable, deterministic)
         return (self.s2 / self.n) - (m * m)
 
+    def stderr(self) -> Optional[float]:
+        """Standard error of the mean."""
+        if self.n <= 1:
+            return None
+        var = self.variance()
+        if var is None or var < 0:
+            return None
+        import math
+        return math.sqrt(var / self.n)
+
     def to_dict(self) -> Dict[str, Any]:
         return {"n": self.n, "s1": self.s1, "s2": self.s2}
 
@@ -191,4 +201,60 @@ def get_legacy_effect_stats(
     """
     key = _k(module_id, knob, value, metric_name=metric_name, baseline_sig=None)
     return store.stats_by_key.get(key)
+
+
+def get_effect_mean(
+    store: EffectStore,
+    *,
+    module_id: str,
+    knob: str,
+    value: Any,
+    baseline_signature: Dict[str, str],
+    metric_name: str,
+) -> Optional[float]:
+    """
+    Retrieve mean effect for a specific configuration.
+    """
+    stats = get_effect_stats(
+        store,
+        module_id=module_id,
+        knob=knob,
+        value=value,
+        baseline_signature=baseline_signature,
+        metric_name=metric_name,
+    )
+    return stats.mean() if stats else None
+
+
+def save_effects(store: EffectStore, path: str) -> None:
+    """
+    Save effect store to JSON file.
+    """
+    import json
+    with open(path, "w") as f:
+        json.dump(store.to_dict(), f, indent=2)
+
+
+def load_effects(path: str) -> EffectStore:
+    """
+    Load effect store from JSON file.
+    """
+    import json
+    with open(path, "r") as f:
+        data = json.load(f)
+    return EffectStore.from_dict(data)
+
+
+def stderr(stats: RunningStats) -> Optional[float]:
+    """
+    Module-level function to get standard error from RunningStats.
+    """
+    return stats.stderr()
+
+
+def variance(stats: RunningStats) -> Optional[float]:
+    """
+    Module-level function to get variance from RunningStats.
+    """
+    return stats.variance()
 

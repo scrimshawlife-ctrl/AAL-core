@@ -6,6 +6,9 @@ from typing import Any, Callable, Dict, List, Optional, Tuple
 from .canary_apply import CanaryResult, canary_apply_tuning_ir
 from .tuning_apply import HotApplyResult, hot_apply_tuning_ir
 
+# Compatibility alias
+hot_apply_portfolio_tuning_ir = hot_apply_tuning_ir
+
 
 @dataclass(frozen=True)
 class PortfolioApplyResult:

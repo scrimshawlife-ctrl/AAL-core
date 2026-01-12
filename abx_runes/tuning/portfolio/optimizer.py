@@ -237,3 +237,7 @@ def build_portfolio(
     }
     return applied, notes
 
+
+# Compatibility alias
+select_portfolio = build_portfolio
+

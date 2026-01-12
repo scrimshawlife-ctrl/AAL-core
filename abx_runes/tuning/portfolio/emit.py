@@ -33,3 +33,7 @@ def make_portfolio_ir(
         }
     )
 
+
+# Compatibility alias
+lock_portfolio_tuning_ir = lock_portfolio_ir
+
