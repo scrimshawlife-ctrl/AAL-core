@@ -50,3 +50,5 @@ htmlcov/
 
 # AAL-Core runtime
 logs/
+.aal/evidence_ledger.jsonl
+test_results.txt
