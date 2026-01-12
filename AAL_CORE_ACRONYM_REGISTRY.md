@@ -36,6 +36,7 @@ The AAL-GIMLET subsystem enforces this registry:
 | **AAL-SEED** | **S**ymbolic **E**ntropy **E**limination for **D**eterminism | Deterministic entropy management and provenance tracking | Throughout |
 | **AAL-ERS** | **E**vidence-based **R**untime **S**tabilization | Runtime tuning system with promotion governance and effect tracking | `aal_core/ers/` |
 | **AAL-RUNE** | **R**untime **U**nit of **N**etworked **E**xecution | Executable unit with deterministic coupling and promotion states | `aal_core/runes/`, `abx_runes/` |
+| **AAL-GRIM** | **G**overned **R**une **I**ndex & **M**emory | Canonical rune catalog with governance and graph validation | `src/aal_core/grim/`, `.aal/grim/` |
 | **AAL-YGGDRASIL** | **Y**GGDRASIL **G**raph **D**ependency **R**esolution **A**nd **S**cheduling **I**nfrastructure **L**ayer | Metadata-first topology layer for ABX-Runes execution planning | `abx_runes/yggdrasil/` |
 | **AAL-OSL** | **O**verlay **S**ervice **L**ayer | Integration layer for external services and overlay manifests | `aal_core/integrations/`, `.aal/overlays/` |
 | **AAL-SCL** | **S**elf-**C**ontainment **L**ayer | Capability gating and containment controls for alignment | `aal_core/alignment/` |
@@ -119,6 +120,20 @@ Executable units with:
 - Promotion states (candidate, promoted, deprecated)
 - Provenance metadata
 - Realm/Lane topology (YGGDRASIL)
+
+---
+
+### AAL-GRIM (Governed Rune Index & Memory)
+
+**Expansion**: Governed Rune Index & Memory
+**Status**: Active
+**Location**: `src/aal_core/grim/`, `.aal/grim/`
+
+Canonical rune catalog governance:
+- Deterministic catalog persistence
+- Manifest discovery and normalization
+- Graph integrity validation (dangling edges, orphans)
+- Append-only governance with archival support
 
 ---
 
