@@ -15,6 +15,25 @@
 - [x] Create Claude.md project documentation
 - [x] Create TODO.md task tracker
 
+### Project Roadmap (2026-01-12)
+- [x] Create ROADMAP.md with project status and milestones
+- [x] Assess test suite health (298 tests, 10 import errors identified)
+- [x] Fix render() function import in luma pipeline
+- [x] Fix SvgStaticRenderer and SvgRenderConfig imports
+- [x] Install project dependencies
+
+## High Priority
+
+### Test Stabilization (CRITICAL)
+- [ ] Fix remaining 10 test import errors:
+  - [ ] `LumaEdge` missing from scene_ir.py (affects test_svg_hash.py)
+  - [ ] Missing functions in effects_store.py (get_effect_mean, save_effects, load_effects)
+  - [ ] Missing functions in portfolio modules (hot_apply_portfolio_tuning_ir, select_portfolio, lock_portfolio_tuning_ir)
+  - [ ] Fix safe_set_builder.py dependencies
+- [ ] Run full test suite and document pass/fail rates
+- [ ] Create test health dashboard or report
+- [ ] Prioritize fixing critical path tests
+
 ## High Priority
 
 ### Core Infrastructure
