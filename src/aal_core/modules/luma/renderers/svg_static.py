@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
 from datetime import datetime, timezone
 import html
 import math
@@ -1174,6 +1175,7 @@ def _subdomain_label(*, scene: LumaSceneIR, subdomain_id: str) -> str:
     return subdomain_id
 
 
+@dataclass
 class SvgRenderConfig:
     """Configuration for SVG static renderer."""
     width: int = 1200
@@ -1184,6 +1186,9 @@ class SvgStaticRenderer:
     """Static SVG renderer for LumaSceneIR."""
 
     def render(self, scene: LumaSceneIR, config: SvgRenderConfig | None = None) -> RenderArtifact:
-        """Render a scene to SVG artifact."""
-        cfg = config or SvgRenderConfig()
-        return render_svg(scene, width=cfg.width, height=cfg.height)
+        """Render a scene to SVG artifact.
+
+        Note: config parameter is accepted for API compatibility but currently unused.
+        Width/height are determined by render_svg implementation.
+        """
+        return render_svg(scene)
