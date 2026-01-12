@@ -15,24 +15,45 @@
 - [x] Create Claude.md project documentation
 - [x] Create TODO.md task tracker
 
-### Project Roadmap (2026-01-12)
+### Project Roadmap & Stabilization (2026-01-12)
 - [x] Create ROADMAP.md with project status and milestones
-- [x] Assess test suite health (298 tests, 10 import errors identified)
+- [x] Assess test suite health (initially 297 tests, 11 import errors)
 - [x] Fix render() function import in luma pipeline
 - [x] Fix SvgStaticRenderer and SvgRenderConfig imports
 - [x] Install project dependencies
+- [x] Fix ALL import errors (11 → 0, 100% resolution)
+- [x] Add missing effects_store functions (get_effect_mean, save_effects, load_effects, stderr, variance)
+- [x] Add missing portfolio types (ImpactVector, PortfolioBudgets, etc.)
+- [x] Add RunningStats.stderr() method
+- [x] Migrate test_svg_hash.py to new SceneEntity/SceneEdge API
+- [x] Add @dataclass decorator to SvgRenderConfig
+- [x] Run full test suite: 315 tests collected, 279 passing (88.6%)
+- [x] Update README.md with test metrics and current status
+- [x] Update ROADMAP.md with test results and categorization
+- [x] Update Claude.md with comprehensive handoff documentation
 
 ## High Priority
 
-### Test Stabilization (CRITICAL)
-- [ ] Fix remaining 10 test import errors:
-  - [ ] `LumaEdge` missing from scene_ir.py (affects test_svg_hash.py)
-  - [ ] Missing functions in effects_store.py (get_effect_mean, save_effects, load_effects)
-  - [ ] Missing functions in portfolio modules (hot_apply_portfolio_tuning_ir, select_portfolio, lock_portfolio_tuning_ir)
-  - [ ] Fix safe_set_builder.py dependencies
-- [ ] Run full test suite and document pass/fail rates
-- [ ] Create test health dashboard or report
-- [ ] Prioritize fixing critical path tests
+### Test Stabilization (IN PROGRESS - 88.6% Complete)
+**Current Status:** 279/315 passing (88.6%), 31 failures, 5 skipped
+
+**Remaining Failures (31 tests):**
+- [ ] Portfolio & ERS (15 failures):
+  - [ ] Fix effects store integration issues
+  - [ ] Fix portfolio optimizer with baseline signatures
+  - [ ] Fix canary rollback logic
+- [ ] Overlay & Policy (4 failures):
+  - [ ] Fix ascend permission tests
+  - [ ] Fix canary deployment tests
+- [ ] Rendering (2 failures):
+  - [ ] Add RenderArtifact.from_text() factory method
+  - [ ] Fix motif lattice placement
+- [ ] Other subsystems (10 failures):
+  - [ ] Triage and categorize remaining failures
+
+**Next Steps:**
+- [ ] Create test health dashboard or CI badge
+- [ ] Set up automated test runs in CI/CD
 
 ## High Priority
 
