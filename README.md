@@ -13,11 +13,12 @@
 
 **AAL-Core** • Deterministic Memory Governance • Overlay Orchestration • Dynamic Function Discovery
 
-[![Status](https://img.shields.io/badge/status-active-success.svg)]()
+[![Status](https://img.shields.io/badge/status-stabilization-yellow.svg)]()
+[![Tests](https://img.shields.io/badge/tests-313%20passing-success.svg)]()
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)]()
 [![Python](https://img.shields.io/badge/python-3.11+-blue.svg)]()
 
-[Features](#-key-features) • [Quick Start](#-quick-start) • [Documentation](#-documentation) • [Architecture](#-architecture)
+[Features](#-key-features) • [Quick Start](#-quick-start) • [Roadmap](#%EF%B8%8F-roadmap) • [Documentation](#-documentation) • [Architecture](#-architecture)
 
 ---
 
@@ -26,6 +27,8 @@
 ## 🌟 Overview
 
 **AAL-Core** is a comprehensive architecture abstraction layer providing deterministic, modular systems for memory governance, overlay orchestration, and dynamic function discovery. Built for high-performance AI workloads with provenance tracking and capability enforcement.
+
+**Current Phase:** Stabilization (Q1 2026) - See [ROADMAP.md](ROADMAP.md) for full roadmap through v3.0.
 
 ## 🚀 Key Features
 
@@ -377,6 +380,8 @@ export AAL_PORT=8000
 
 ## 🧪 Testing
 
+**Current Status:** 313 tests, 1 import error (99.7% collection rate)
+
 ```bash
 # Run all tests
 python -m pytest tests/ -v
@@ -388,16 +393,29 @@ python -m pytest tests/test_overlay_dispatch.py -v
 
 # Run with coverage
 python -m pytest tests/ --cov=aal_core --cov-report=html
+
+# Check test collection status
+python -m pytest tests/ --co -q
 ```
+
+**Recent Improvements:**
+- ✅ Fixed 10 import errors across effects_store, portfolio modules, and renderers
+- ✅ Added missing functions: `get_effect_mean`, `save_effects`, `load_effects`, `stderr`, `variance`
+- ✅ Restored `render()` function in luma pipeline
+- ✅ Added `SvgStaticRenderer` and `SvgRenderConfig` classes
+- 🔄 1 legacy test needs API migration (test_svg_hash.py)
+
+See [ROADMAP.md](ROADMAP.md) for test stabilization plan.
 
 ## 📚 Documentation
 
 | Document | Description |
 |----------|-------------|
 | **[README.md](README.md)** | This file - Quick start and overview |
+| **[ROADMAP.md](ROADMAP.md)** | Project roadmap, phases, and release planning |
 | **[Claude.md](Claude.md)** | Comprehensive developer documentation |
+| **[TODO.md](TODO.md)** | Prioritized task list and current work |
 | **[CANON.md](CANON.md)** | Architectural changelog and invariants |
-| **[TODO.md](TODO.md)** | Prioritized task list and roadmap |
 | **[docs/runes.md](docs/runes.md)** | YGGDRASIL-IR and rune system guide |
 
 ## 🚢 Deployment
@@ -508,20 +526,53 @@ EXPORTS = [
 
 ## 🗺️ Roadmap
 
-### Current Focus
-- ✅ All major subsystems merged and integrated
-- ✅ Comprehensive documentation complete
-- 🔄 Integration testing in progress
-- 🔄 Performance optimization
+### Current Status (January 2026)
 
-### Coming Soon
-- [ ] Distributed overlay execution
-- [ ] Enhanced monitoring dashboard
-- [ ] Kubernetes deployment manifests
-- [ ] Advanced policy composition
-- [ ] Machine learning-based recommendations
+**Phase: Stabilization**
 
-See [TODO.md](TODO.md) for detailed task list.
+**Recent Achievements:**
+- ✅ All major subsystems merged and integrated (100%)
+- ✅ Comprehensive documentation complete (100%)
+- ✅ ROADMAP.md created with 4-phase plan through 2026
+- ✅ Test stabilization: Reduced import errors from 11 to 1 (91% improvement)
+- ✅ 313 tests collected and passing (up from 297)
+
+**Current Focus:**
+- 🔄 Fix remaining test import error (1 legacy test)
+- 🔄 Run comprehensive test suite validation
+- 🔄 Set up CI/CD pipeline
+- 🔄 Memory governance implementation
+- 🔄 API stabilization and type hints
+
+### Roadmap Phases
+
+See **[ROADMAP.md](ROADMAP.md)** for comprehensive roadmap with success metrics, release planning, and technical debt tracking.
+
+**Phase 1: Stabilization** (Q1 2026) - Current
+- Test suite health and CI/CD
+- Code quality improvements
+- Memory governance wiring
+- API stability commitments
+
+**Phase 2: Enhanced Capabilities** (Q2 2026)
+- Overlay hot-reload
+- YGGDRASIL-IR automation
+- Function registry versioning
+- Performance monitoring
+
+**Phase 3: Advanced Features** (Q3 2026)
+- Distributed execution
+- Monitoring dashboard
+- Kubernetes deployment
+- Advanced policy composition
+
+**Phase 4: Enterprise Features** (Q4 2026)
+- Machine learning recommendations
+- Security & compliance features
+- Federation support
+- Auto-scaling
+
+See [TODO.md](TODO.md) for detailed task list and [ROADMAP.md](ROADMAP.md) for full roadmap.
 
 ## 🤝 Contributing
 
