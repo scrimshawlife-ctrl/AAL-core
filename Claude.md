@@ -231,15 +231,15 @@ sudo systemctl enable --now aal-core.service
 ### Branch Information
 - **Current Branch**: `claude/new-session-iz3ag`
 - **Base Branch**: `main`
-- **Commits**: 5 commits ready for review
+- **Commits**: 8 commits ready for review
 - **Status**: All changes committed and pushed
 
 ### Test Health - Major Milestone Achieved ✅
 
 **Overall Metrics:**
 - **Test Collection**: 315/315 (100% - up from 297)
-- **Test Pass Rate**: 279/315 (88.6%)
-- **Test Failures**: 31 remaining
+- **Test Pass Rate**: 282/315 (89.5% - up from 88.6%)
+- **Test Failures**: 28 remaining (down from 31)
 - **Import Errors**: 0 (down from 11)
 
 **Recent Improvements:**
@@ -250,29 +250,34 @@ sudo systemctl enable --now aal-core.service
    - Added portfolio types: `ImpactVector`, `PortfolioBudgets`, `PortfolioCandidate`
    - Migrated test_svg_hash.py to new SceneEntity/SceneEdge API
 
-2. **Test Collection Fixed**
+2. **Added RenderArtifact API methods** (Fixed 3 tests)
+   - Added `RenderArtifact.from_text()` static factory method
+   - Added `content_sha256` property for backward compatibility
+   - Fixed test_svg_hash.py tests (2 passing)
+   - Fixed test_motif_lattice_placement.py (1 passing)
+
+3. **Test Collection Fixed**
    - All 315 tests now collect successfully
    - No blocking import errors
    - Clean test discovery
 
-3. **Documentation Updated**
+4. **Documentation Updated**
    - Created comprehensive ROADMAP.md with 4-phase plan through 2026
    - Updated README.md with current metrics and badges
    - Updated TODO.md with priorities
 
-### Remaining Work (31 Test Failures)
+### Remaining Work (28 Test Failures)
 
 **By Category:**
 - **Portfolio & ERS** (15 failures): Effects store integration, optimizer, rollback logic
 - **Overlay & Policy** (4 failures): Ascend permissions, canary deployment
-- **Rendering** (2 failures): Motif lattice placement, SVG artifact creation
-- **Other Subsystems** (10 failures): Scattered across various modules
+- **Other Subsystems** (9 failures): Scattered across various modules
 
 **Root Causes:**
-- API evolution (SceneEntity/SceneEdge migration incomplete)
-- Missing RenderArtifact.from_text() factory method
 - Integration issues between portfolio optimizer and effects store
 - Canary rollback logic needs updating
+- Policy enforcement edge cases in overlay tests
+- Effects store baseline signature format requirements
 
 ### Key Files Modified (This Session)
 
@@ -280,6 +285,7 @@ sudo systemctl enable --now aal-core.service
    - `ROADMAP.md` - Comprehensive 4-phase roadmap
 
 2. **Core Fixes:**
+   - `src/aal_core/modules/luma/contracts/render_artifact.py` - Added from_text() factory method and content_sha256 property
    - `src/aal_core/modules/luma/pipeline/export.py` - Restored render()
    - `src/aal_core/modules/luma/renderers/svg_static.py` - Added classes, dataclass decorator
    - `aal_core/ers/effects_store.py` - Added 5 missing functions
@@ -287,16 +293,18 @@ sudo systemctl enable --now aal-core.service
    - `tests/test_svg_hash.py` - Migrated to new API
 
 3. **Documentation:**
-   - `README.md` - Updated with test metrics
+   - `README.md` - Updated with test metrics (89.5%)
+   - `ROADMAP.md` - Updated with progress
+   - `Claude.md` - Updated for handoff
    - `TODO.md` - Updated priorities
    - `.gitignore` - Added runtime artifacts
 
 ### Next Steps (Priority Order)
 
-1. **Immediate** - Fix remaining 31 test failures:
-   - Add `RenderArtifact.from_text()` factory method
-   - Complete SceneEntity/SceneEdge migration in remaining tests
-   - Fix portfolio optimizer integration with effects store
+1. **Immediate** - Fix remaining 28 test failures:
+   - Fix portfolio optimizer integration with effects store (15 tests)
+   - Fix overlay policy enforcement edge cases (4 tests)
+   - Triage and fix remaining 9 scattered failures
    - Update canary rollback logic
 
 2. **Short-term** - CI/CD and Quality:
@@ -318,15 +326,17 @@ sudo systemctl enable --now aal-core.service
 **If continuing this work:**
 1. Review ROADMAP.md for comprehensive roadmap and success metrics
 2. Check TODO.md for detailed task breakdown
-3. Current branch has 5 commits ready for PR creation
-4. Test failures are categorized and documented in ROADMAP.md
+3. Current branch has 8 commits ready for PR creation
+4. Test failures are categorized and documented in ROADMAP.md (28 remaining)
 5. All import errors resolved - clean foundation for continued work
+6. Test pass rate: 89.5% (282/315)
 
 **Critical Context:**
-- Recent refactors moved from LumaEntity/LumaEdge to SceneEntity/SceneEdge
-- RenderArtifact API changed (no more from_text() method)
+- Recent refactors moved from LumaEntity/LumaEdge to SceneEntity/SceneEdge (completed)
+- RenderArtifact.from_text() factory method added (completed)
 - Portfolio system requires specific baseline_signature format
 - Tests use SourceFrameProvenance with all 7 required fields
+- Focus next on portfolio optimizer integration (15 failing tests)
 
 **Resources:**
 - [ROADMAP.md](ROADMAP.md) - 4-phase roadmap with timelines
