@@ -224,6 +224,118 @@ sudo systemctl enable --now aal-core.service
 4. **Deterministic hashing**: All catalog hashes are order-independent
 5. **Subprocess isolation**: Overlays execute in isolated subprocesses
 
+---
+
+## Current Status (January 12, 2026)
+
+### Branch Information
+- **Current Branch**: `claude/new-session-iz3ag`
+- **Base Branch**: `main`
+- **Commits**: 5 commits ready for review
+- **Status**: All changes committed and pushed
+
+### Test Health - Major Milestone Achieved ✅
+
+**Overall Metrics:**
+- **Test Collection**: 315/315 (100% - up from 297)
+- **Test Pass Rate**: 279/315 (88.6%)
+- **Test Failures**: 31 remaining
+- **Import Errors**: 0 (down from 11)
+
+**Recent Improvements:**
+1. **Fixed ALL import errors** (11 → 0, 100% resolution)
+   - Restored `render()` function in luma/pipeline/export.py
+   - Added missing effects_store functions: `get_effect_mean()`, `save_effects()`, `load_effects()`, `stderr()`, `variance()`
+   - Added `SvgStaticRenderer` and `SvgRenderConfig` with proper dataclass decorators
+   - Added portfolio types: `ImpactVector`, `PortfolioBudgets`, `PortfolioCandidate`
+   - Migrated test_svg_hash.py to new SceneEntity/SceneEdge API
+
+2. **Test Collection Fixed**
+   - All 315 tests now collect successfully
+   - No blocking import errors
+   - Clean test discovery
+
+3. **Documentation Updated**
+   - Created comprehensive ROADMAP.md with 4-phase plan through 2026
+   - Updated README.md with current metrics and badges
+   - Updated TODO.md with priorities
+
+### Remaining Work (31 Test Failures)
+
+**By Category:**
+- **Portfolio & ERS** (15 failures): Effects store integration, optimizer, rollback logic
+- **Overlay & Policy** (4 failures): Ascend permissions, canary deployment
+- **Rendering** (2 failures): Motif lattice placement, SVG artifact creation
+- **Other Subsystems** (10 failures): Scattered across various modules
+
+**Root Causes:**
+- API evolution (SceneEntity/SceneEdge migration incomplete)
+- Missing RenderArtifact.from_text() factory method
+- Integration issues between portfolio optimizer and effects store
+- Canary rollback logic needs updating
+
+### Key Files Modified (This Session)
+
+1. **New Files:**
+   - `ROADMAP.md` - Comprehensive 4-phase roadmap
+
+2. **Core Fixes:**
+   - `src/aal_core/modules/luma/pipeline/export.py` - Restored render()
+   - `src/aal_core/modules/luma/renderers/svg_static.py` - Added classes, dataclass decorator
+   - `aal_core/ers/effects_store.py` - Added 5 missing functions
+   - `abx_runes/tuning/portfolio/types.py` - Added missing types
+   - `tests/test_svg_hash.py` - Migrated to new API
+
+3. **Documentation:**
+   - `README.md` - Updated with test metrics
+   - `TODO.md` - Updated priorities
+   - `.gitignore` - Added runtime artifacts
+
+### Next Steps (Priority Order)
+
+1. **Immediate** - Fix remaining 31 test failures:
+   - Add `RenderArtifact.from_text()` factory method
+   - Complete SceneEntity/SceneEdge migration in remaining tests
+   - Fix portfolio optimizer integration with effects store
+   - Update canary rollback logic
+
+2. **Short-term** - CI/CD and Quality:
+   - Set up GitHub Actions for automated testing
+   - Configure linters (black, flake8, mypy)
+   - Add pre-commit hooks
+   - Measure and track code coverage
+
+3. **Medium-term** - Memory Governance:
+   - Wire LLM/pipeline to respect degradation parameters
+   - Add cgroup/container enforcement
+   - Implement tier-specific allocators
+   - Add metrics collection
+
+4. **See ROADMAP.md for full details** - 4 phases through v3.0 (2026)
+
+### Handoff Notes
+
+**If continuing this work:**
+1. Review ROADMAP.md for comprehensive roadmap and success metrics
+2. Check TODO.md for detailed task breakdown
+3. Current branch has 5 commits ready for PR creation
+4. Test failures are categorized and documented in ROADMAP.md
+5. All import errors resolved - clean foundation for continued work
+
+**Critical Context:**
+- Recent refactors moved from LumaEntity/LumaEdge to SceneEntity/SceneEdge
+- RenderArtifact API changed (no more from_text() method)
+- Portfolio system requires specific baseline_signature format
+- Tests use SourceFrameProvenance with all 7 required fields
+
+**Resources:**
+- [ROADMAP.md](ROADMAP.md) - 4-phase roadmap with timelines
+- [TODO.md](TODO.md) - Prioritized task list
+- [README.md](README.md) - Current project status
+- [docs/runes.md](docs/runes.md) - YGGDRASIL-IR guide
+
+---
+
 ## Future Directions
 
 - **Tier-specific memory allocators**: Implement LOCAL/EXTENDED/COLD tiers
@@ -234,7 +346,9 @@ sudo systemctl enable --now aal-core.service
 
 ## References
 
-- **README.md**: User-facing documentation with quickstart guides
-- **CANON.md**: Architectural changelog with version history
-- **docs/runes.md**: YGGDRASIL-IR and rune system documentation
-- **alignment_core/handbook/README.md**: Alignment system guide
+- **[README.md](README.md)**: User-facing documentation with quickstart guides and current status
+- **[ROADMAP.md](ROADMAP.md)**: Comprehensive 4-phase roadmap with success metrics and release planning
+- **[TODO.md](TODO.md)**: Prioritized task list with current work and priorities
+- **[CANON.md](CANON.md)**: Architectural changelog with version history
+- **[docs/runes.md](docs/runes.md)**: YGGDRASIL-IR and rune system documentation
+- **[alignment_core/handbook/README.md](alignment_core/handbook/README.md)**: Alignment system guide
