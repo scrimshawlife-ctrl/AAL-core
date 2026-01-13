@@ -76,6 +76,10 @@ class EffectStore:
             "artifacts": list(self.artifacts),
         }
 
+    def to_jsonable(self) -> Dict[str, Any]:
+        """Alias for to_dict() for compatibility."""
+        return self.to_dict()
+
     def buckets_for(self, *, module_id: str, knob: str, value: Any) -> Dict[str, Dict[str, RunningStats]]:
         """
         Enumerate bucketed stats for a given (module_id, knob, value).

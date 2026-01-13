@@ -25,8 +25,18 @@ class EvidenceLedger:
     - Monotonic integer idx (derived from file tail)
     """
 
-    def __init__(self, path: Path = DEFAULT_LEDGER_PATH):
-        self.path = path
+    def __init__(self, path: Optional[Path] = None, ledger_path: Optional[Path] = None, counter_path: Optional[Path] = None):
+        # Support both old and new parameter names
+        if ledger_path is not None:
+            self.path = ledger_path
+        elif path is not None:
+            self.path = path
+        else:
+            self.path = DEFAULT_LEDGER_PATH
+
+        # counter_path is accepted but not used (for backward compatibility)
+        self.counter_path = counter_path
+
         self.path.parent.mkdir(parents=True, exist_ok=True)
 
     def _read_last_idx(self) -> int:
@@ -80,4 +90,24 @@ class EvidenceLedger:
             return out
         except Exception:
             return []
+
+    def tail_hash(self, n: int = 100) -> str:
+        """
+        Compute a deterministic hash of the last N entries for change detection.
+
+        Args:
+            n: Number of tail entries to hash (default 100)
+
+        Returns:
+            SHA256 hash of the canonical JSON representation of the tail
+        """
+        import hashlib
+
+        tail = self.read_tail(n)
+        if not tail:
+            return hashlib.sha256(b"").hexdigest()
+
+        # Use canonical JSON dumps for deterministic hashing
+        tail_json = canonical_json_dumps(tail)
+        return hashlib.sha256(tail_json.encode("utf-8")).hexdigest()
 
