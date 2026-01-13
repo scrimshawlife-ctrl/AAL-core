@@ -226,52 +226,68 @@ sudo systemctl enable --now aal-core.service
 
 ---
 
-## Current Status (January 12, 2026)
+## Current Status (January 13, 2026)
 
 ### Branch Information
 - **Current Branch**: `claude/new-session-iz3ag`
 - **Base Branch**: `main`
-- **Commits**: 8 commits ready for review
+- **Commits**: 10 commits ready for review
 - **Status**: All changes committed and pushed
 
-### Test Health - Major Milestone Achieved ✅
+### Test Health - 91.7% Pass Rate Achieved ✅
 
 **Overall Metrics:**
-- **Test Collection**: 315/315 (100% - up from 297)
-- **Test Pass Rate**: 282/315 (89.5% - up from 88.6%)
-- **Test Failures**: 28 remaining (down from 31)
-- **Import Errors**: 0 (down from 11)
+- **Test Collection**: 315/315 (100% collection rate)
+- **Test Pass Rate**: 289/315 (91.7% - up from 89.5%)
+- **Test Failures**: 21 remaining (down from 28)
+- **Import Errors**: 0
 
 **Recent Improvements:**
-1. **Fixed ALL import errors** (11 → 0, 100% resolution)
+1. **Portfolio Optimizer Implementation** (Fixed 8 tests - 91.7% pass rate)
+   - Implemented `select_portfolio()` for multi-module portfolio optimization
+   - Added `PortfolioSelection` dataclass with selected_candidates, module_tuning_irs, totals, total_score
+   - Implemented candidate filtering by capabilities and stabilization gates
+   - Added objective-based scoring with proper minimization logic (higher scores preferred)
+   - Implemented budget enforcement (only positive deltas count toward spend)
+   - Fixed `PortfolioCandidate` fields: node_id, knob_name, proposed_value, reason_tags
+   - Added `to_dict()` methods to ImpactVector, PortfolioBudgets, PortfolioObjectiveWeights
+   - Implemented `hot_apply_portfolio_tuning_ir()` wrapper for portfolio application
+   - Made `build_portfolio()` support both high-level and low-level signatures
+
+2. **Effects Store Refactoring** (Fixed consistency issues)
+   - Renamed `stats_by_key` field to `stats` for test compatibility
+   - Made `record_effect()` baseline_signature parameter optional
+   - Updated all references across effects_store.py and promotion_scanner.py
+
+3. **Fixed ALL import errors** (11 → 0, 100% resolution)
    - Restored `render()` function in luma/pipeline/export.py
    - Added missing effects_store functions: `get_effect_mean()`, `save_effects()`, `load_effects()`, `stderr()`, `variance()`
    - Added `SvgStaticRenderer` and `SvgRenderConfig` with proper dataclass decorators
-   - Added portfolio types: `ImpactVector`, `PortfolioBudgets`, `PortfolioCandidate`
    - Migrated test_svg_hash.py to new SceneEntity/SceneEdge API
 
-2. **Added RenderArtifact API methods** (Fixed 3 tests)
+4. **Added RenderArtifact API methods** (Fixed 3 tests)
    - Added `RenderArtifact.from_text()` static factory method
    - Added `content_sha256` property for backward compatibility
    - Fixed test_svg_hash.py tests (2 passing)
    - Fixed test_motif_lattice_placement.py (1 passing)
 
-3. **Test Collection Fixed**
-   - All 315 tests now collect successfully
-   - No blocking import errors
-   - Clean test discovery
-
-4. **Documentation Updated**
+5. **Test Collection & Documentation**
+   - All 315 tests now collect successfully (100% collection rate)
    - Created comprehensive ROADMAP.md with 4-phase plan through 2026
    - Updated README.md with current metrics and badges
    - Updated TODO.md with priorities
 
-### Remaining Work (28 Test Failures)
+### Remaining Work (21 Test Failures)
 
-**By Category:**
-- **Portfolio & ERS** (15 failures): Effects store integration, optimizer, rollback logic
-- **Overlay & Policy** (4 failures): Ascend permissions, canary deployment
-- **Other Subsystems** (9 failures): Scattered across various modules
+**By Subsystem:**
+- **Promotion System** (9 failures): Scanner determinism, overlay integration, gate enforcement
+- **Canary Rollback** (3 failures): Drift detection, artifact recording, rollback hashing
+- **Portfolio/Optimizer** (2 failures): Effects-based portfolio builder high-level implementation
+- **Overlay/Policy** (2 failures): ASCEND capability enforcement for exec overlays
+- **Safe Set Builder** (2 failures): Rollback rate filtering, numeric range derivation
+- **Effects Store** (1 failure): Roundtrip serialization with mean update
+- **Cooldown** (1 failure): Ledger index-based expiration
+- **Significance Gate** (1 failure): Z-score threshold enforcement
 
 **Root Causes:**
 - Integration issues between portfolio optimizer and effects store
