@@ -98,7 +98,7 @@ def scan_for_promotions(
     end_idx = int(tail[-1]["idx"]) if tail else 0
     entry_hashes_sampled = [str(e.get("entry_hash", "")) for e in tail[: min(25, len(tail))]]
 
-    for effect_key in sorted(store.stats_by_key.keys()):
+    for effect_key in sorted(store.stats.keys()):
         parsed = _parse_effect_key(effect_key)
         if parsed is None:
             continue
@@ -106,7 +106,7 @@ def scan_for_promotions(
         if metric_name not in metrics:
             continue
 
-        st = store.stats_by_key.get(effect_key)
+        st = store.stats.get(effect_key)
         if st is None:
             continue
         if st.n < min_samples:

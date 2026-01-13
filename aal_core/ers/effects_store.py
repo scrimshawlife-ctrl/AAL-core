@@ -65,14 +65,14 @@ class EffectStore:
     supply a baseline_signature.
     """
 
-    stats_by_key: Dict[str, RunningStats] = field(default_factory=dict)
+    stats: Dict[str, RunningStats] = field(default_factory=dict)
     # Append-only evidence artifacts (e.g., RollbackIR dicts) for continuity/auditing.
     artifacts: List[Dict[str, Any]] = field(default_factory=list)
 
     def to_dict(self) -> Dict[str, Any]:
         return {
             "schema_version": "effect-store/0.7",
-            "stats": {k: v.to_dict() for k, v in self.stats_by_key.items()},
+            "stats": {k: v.to_dict() for k, v in self.stats.items()},
             "artifacts": list(self.artifacts),
         }
 
@@ -88,7 +88,7 @@ class EffectStore:
         """
         prefix = f"{module_id}::{knob}::{str(value)}::"
         out: Dict[str, Dict[str, RunningStats]] = {}
-        for key, rs in self.stats_by_key.items():
+        for key, rs in self.stats.items():
             if not key.startswith(prefix):
                 continue
             rest = key[len(prefix) :]
@@ -108,7 +108,7 @@ class EffectStore:
         raw = d.get("stats") or {}
         out = EffectStore()
         for k, v in raw.items():
-            out.stats_by_key[str(k)] = RunningStats.from_dict(v or {})
+            out.stats[str(k)] = RunningStats.from_dict(v or {})
         arts = d.get("artifacts") or []
         if isinstance(arts, list):
             out.artifacts = [a for a in arts if isinstance(a, dict)]
@@ -146,9 +146,9 @@ def record_effect(
     module_id: str,
     knob: str,
     value: Any,
-    baseline_signature: Dict[str, str],
     before_metrics: Dict[str, Any],
     after_metrics: Dict[str, Any],
+    baseline_signature: Optional[Dict[str, str]] = None,
 ) -> None:
     """
     Record observed deltas into (module, knob, value, baseline_bucket, metric) stats.
@@ -156,6 +156,8 @@ def record_effect(
     Only numeric metrics present in both snapshots are recorded.
     Delta is computed as (after - before).
     """
+    if baseline_signature is None:
+        baseline_signature = {}
     for metric_name, before_v in (before_metrics or {}).items():
         if metric_name not in (after_metrics or {}):
             continue
@@ -164,10 +166,10 @@ def record_effect(
             continue
         delta = float(after_v) - float(before_v)
         key = _k(module_id, knob, value, metric_name=metric_name, baseline_sig=baseline_signature)
-        s = store.stats_by_key.get(key)
+        s = store.stats.get(key)
         if s is None:
             s = RunningStats()
-            store.stats_by_key[key] = s
+            store.stats[key] = s
         s.add(delta)
 
 
@@ -184,7 +186,7 @@ def get_effect_stats(
     Retrieve stats for exactly the provided baseline bucket.
     """
     key = _k(module_id, knob, value, metric_name=metric_name, baseline_sig=baseline_signature)
-    return store.stats_by_key.get(key)
+    return store.stats.get(key)
 
 
 def get_legacy_effect_stats(
@@ -200,7 +202,7 @@ def get_legacy_effect_stats(
     Kept for backward-compatible loading / inspection only.
     """
     key = _k(module_id, knob, value, metric_name=metric_name, baseline_sig=None)
-    return store.stats_by_key.get(key)
+    return store.stats.get(key)
 
 
 def get_effect_mean(

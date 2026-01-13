@@ -14,14 +14,21 @@ class ImpactVector:
     delta_error_rate: float = 0.0
     delta_throughput_per_s: float = 0.0
 
+    def to_dict(self) -> Dict[str, Any]:
+        return asdict(self)
+
 
 @dataclass(frozen=True)
 class PortfolioBudgets:
     """
     Budget constraints for portfolio optimization.
     """
-    cost_units: Optional[float] = None
-    latency_ms_p95: Optional[float] = None
+    max_total_cost_units: Optional[float] = None
+    max_total_latency_ms_p95: Optional[float] = None
+    max_changes_per_cycle: int = 10
+
+    def to_dict(self) -> Dict[str, Any]:
+        return asdict(self)
 
 
 @dataclass(frozen=True)
@@ -30,9 +37,11 @@ class PortfolioCandidate:
     Candidate tuning configuration for portfolio selection.
     """
     module_id: str
-    knob: str
-    value: Any
+    node_id: str
+    knob_name: str
+    proposed_value: Any
     impact: ImpactVector
+    reason_tags: tuple = ()
 
 
 @dataclass(frozen=True)
@@ -44,6 +53,9 @@ class PortfolioObjectiveWeights:
     w_cost: float = 1.0
     w_error: float = 1.0
     w_throughput: float = 1.0
+
+    def to_dict(self) -> Dict[str, Any]:
+        return asdict(self)
 
 
 @dataclass(frozen=True)
