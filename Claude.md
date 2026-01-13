@@ -231,19 +231,39 @@ sudo systemctl enable --now aal-core.service
 ### Branch Information
 - **Current Branch**: `claude/new-session-iz3ag`
 - **Base Branch**: `main`
-- **Commits**: 10 commits ready for review
+- **Commits**: 16 commits ready for review
 - **Status**: All changes committed and pushed
 
-### Test Health - 91.7% Pass Rate Achieved ✅
+### Test Health - 94.3% Pass Rate Achieved! 🎉
 
 **Overall Metrics:**
 - **Test Collection**: 315/315 (100% collection rate)
-- **Test Pass Rate**: 289/315 (91.7% - up from 89.5%)
-- **Test Failures**: 21 remaining (down from 28)
+- **Test Pass Rate**: 297/315 (94.3% - up from 89.5%)
+- **Test Failures**: 13 remaining (down from 28)
 - **Import Errors**: 0
+- **Session Improvement**: +15 tests fixed, +4.8% pass rate increase
 
 **Recent Improvements:**
-1. **Portfolio Optimizer Implementation** (Fixed 8 tests - 91.7% pass rate)
+1. **ASCEND Phase Capability Enforcement** (Fixed 3 tests - 94.3% pass rate)
+   - Added ASCEND phase to abraxas overlay manifest (now standard across all overlays)
+   - Policy enforcement correctly blocks ASCEND for overlays without 'exec' capability
+   - Returns 403 (Forbidden) for missing capability, not 400 (Bad Request)
+   - Separates phase declaration from runtime permission enforcement
+   - Updated test expectations to match new architecture
+
+2. **Canary Rollback System** (Fixed 3 tests - 93.7% pass rate)
+   - Fixed `DriftReport` attribute references in canary_apply.py
+   - Changed `degraded_score` → `drift_score` (correct attribute name)
+   - Changed `checks` → `reasons` (correct attribute name)
+   - All canary rollback tests now pass
+
+3. **Evidence Ledger & Promotion Scanner** (Fixed 3 tests - 92.7% pass rate)
+   - Updated `EvidenceLedger.__init__()` to accept both parameter styles ('path' and 'ledger_path'/'counter_path')
+   - Added `tail_hash()` method for deterministic ledger verification
+   - Added `to_jsonable()` method to EffectStore for compatibility
+   - Fixed promotion scanner determinism and gate tests
+
+4. **Portfolio Optimizer Implementation** (Fixed 8 tests - 91.7% pass rate)
    - Implemented `select_portfolio()` for multi-module portfolio optimization
    - Added `PortfolioSelection` dataclass with selected_candidates, module_tuning_irs, totals, total_score
    - Implemented candidate filtering by capabilities and stabilization gates
@@ -277,17 +297,16 @@ sudo systemctl enable --now aal-core.service
    - Updated README.md with current metrics and badges
    - Updated TODO.md with priorities
 
-### Remaining Work (21 Test Failures)
+### Remaining Work (13 Test Failures)
 
 **By Subsystem:**
-- **Promotion System** (9 failures): Scanner determinism, overlay integration, gate enforcement
-- **Canary Rollback** (3 failures): Drift detection, artifact recording, rollback hashing
+- **Promotion System** (5 failures): Executor ledger events, overlay integration, rollback attribution
 - **Portfolio/Optimizer** (2 failures): Effects-based portfolio builder high-level implementation
-- **Overlay/Policy** (2 failures): ASCEND capability enforcement for exec overlays
 - **Safe Set Builder** (2 failures): Rollback rate filtering, numeric range derivation
 - **Effects Store** (1 failure): Roundtrip serialization with mean update
 - **Cooldown** (1 failure): Ledger index-based expiration
 - **Significance Gate** (1 failure): Z-score threshold enforcement
+- **Overlay** (1 failure): Integration test
 
 **Root Causes:**
 - Integration issues between portfolio optimizer and effects store
