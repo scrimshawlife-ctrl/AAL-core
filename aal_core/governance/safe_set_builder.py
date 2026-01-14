@@ -54,7 +54,7 @@ def build_safe_sets(
     rollbacks = defaultdict(int)  # same key
 
     for ent in tail:
-        t = ent.get("type")
+        t = ent.get("entry_type")
         if t == "tuning_attempted":
             p = ent.get("payload") or {}
             mid = str(p.get("module_id", ""))
