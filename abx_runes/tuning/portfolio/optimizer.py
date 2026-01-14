@@ -278,6 +278,7 @@ def _build_portfolio_single_module(
     min_similarity: float = 0.75,
     shadow_penalty: float = 0.5,
     z_threshold_shadow: float = 3.0,
+    promotion_overlay: Any = None,  # PromotionOverlay optional
 ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
     """
     Bucket-aware portfolio selection for a single module (v0.8).
@@ -287,16 +288,27 @@ def _build_portfolio_single_module(
       - If enabled, may generalize shadow-only from similar buckets with penalties and stricter z
       - Never applies cross-bucket; applied tuning remains bucket-local
     """
+    from aal_core.runtime.promotion_overlay import PromotionOverlay
+
     module_id = str(tuning_envelope.get("module_id"))
     knobs = list(tuning_envelope.get("knobs") or [])
 
     # Optimizer does not know "now_idx"; cooldown scanner is responsible for pruning expired entries.
     cooldown_store = cooldown_store or CooldownStore.load()
 
+    # Load promotion overlay if not provided
+    if promotion_overlay is None:
+        try:
+            promotion_overlay = PromotionOverlay.load()
+        except Exception:
+            promotion_overlay = None
+
     applied: Dict[str, Any] = {}
     shadow_only: Dict[str, Any] = {}
     excluded: Dict[str, str] = {}
     shadow_cross_bucket: Dict[str, Any] = {}
+    promotion_knobs_selected = 0
+    promoted_defaults_applied: list[str] = []
 
     # Deterministic traversal
     for spec in sorted(knobs, key=lambda k: str(k.get("name"))):
@@ -330,9 +342,18 @@ def _build_portfolio_single_module(
             if ck in cooldown_store.entries:
                 saw_cooled_stats = True
                 continue
-            # minimize mean delta (negative is better if latency decreases)
-            if best_score is None or m < best_score or (m == best_score and str(v) < str(best_val)):
-                best_score = m
+            # minimize mean delta (negative is better if latency decreases), with promotion bias
+            bias = 0.0
+            if promotion_overlay is not None:
+                bias = promotion_overlay.score_bias(
+                    module_id=module_id,
+                    knob=name,
+                    value=v,
+                    baseline_signature=baseline_signature,
+                )
+            score = float(m) - bias  # Lower is better; bias makes promoted values more attractive
+            if best_score is None or score < best_score or (score == best_score and str(v) < str(best_val)):
+                best_score = score
                 best_val = v
 
         if best_val is None:
@@ -410,6 +431,18 @@ def _build_portfolio_single_module(
                         excluded[name] = "no_bucket_stats" if not any_bucket_local else "no_usable_bucket_stats"
                     continue
 
+            # Check for promoted default before falling back to shadow_only or exclusion
+            if promotion_overlay is not None:
+                promoted_val = promotion_overlay.get_promoted_value(
+                    module_id=module_id,
+                    knob=name,
+                    baseline_signature=baseline_signature,
+                )
+                if promoted_val is not None:
+                    applied[name] = promoted_val
+                    promoted_defaults_applied.append(name)
+                    continue
+
             if allow_shadow_only:
                 shadow_only[name] = spec.get("default")
                 excluded[name] = "cooldown_active" if saw_cooled_stats else "shadow_only_no_bucket_stats"
@@ -419,6 +452,16 @@ def _build_portfolio_single_module(
 
         applied[name] = best_val
 
+        # Track if this was a promoted value
+        if promotion_overlay is not None:
+            promoted_val = promotion_overlay.get_promoted_value(
+                module_id=module_id,
+                knob=name,
+                baseline_signature=baseline_signature,
+            )
+            if promoted_val is not None and str(promoted_val) == str(best_val):
+                promotion_knobs_selected += 1
+
     notes = {
         "module_id": module_id,
         "metric_name": metric_name,
@@ -426,6 +469,8 @@ def _build_portfolio_single_module(
         "excluded": excluded,
         "shadow_only": shadow_only,
         "shadow_cross_bucket": shadow_cross_bucket,
+        "promotion_knobs_selected": promotion_knobs_selected,
+        "promoted_defaults_applied": promoted_defaults_applied,
     }
     return applied, notes
 
