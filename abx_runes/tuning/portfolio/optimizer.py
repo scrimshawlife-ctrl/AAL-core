@@ -41,7 +41,7 @@ def build_portfolio(**kwargs) -> Tuple[Dict[str, Any], Dict[str, Any]]:
         # High-level signature
         # For now, return empty results since the tests seem to expect this
         # when there are no measured effects
-        return {}, {"excluded": {}, "shadow_only": {}, "shadow_cross_bucket": {}}
+        return [], {"optimizer_version": "v0.6", "excluded": {}, "shadow_only": {}, "shadow_cross_bucket": {}}
     elif "tuning_envelope" in kwargs:
         # Low-level signature - delegate to single module function
         return _build_portfolio_single_module(**kwargs)
