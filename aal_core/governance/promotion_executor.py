@@ -102,7 +102,7 @@ def apply_approved_promotions(
             effects_store=effects_store,
             get_metrics_snapshot=get_metrics_snapshot,
             get_current_assignments=get_current_assignments,
-            stab=getattr(desc, "stabilization_state", None),
+            stabilization_state=getattr(desc, "stabilization_state", None),
             cycle_boundary=True,
             policy=policy,
         )
