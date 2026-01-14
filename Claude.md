@@ -231,20 +231,34 @@ sudo systemctl enable --now aal-core.service
 ### Branch Information
 - **Current Branch**: `claude/new-session-iz3ag`
 - **Base Branch**: `main`
-- **Commits**: 16 commits ready for review
+- **Commits**: 19 commits ready for review
 - **Status**: All changes committed and pushed
 
-### Test Health - 94.3% Pass Rate Achieved! 🎉
+### Test Health - 95.6% Pass Rate Achieved! 🎉🎯
 
 **Overall Metrics:**
 - **Test Collection**: 315/315 (100% collection rate)
-- **Test Pass Rate**: 297/315 (94.3% - up from 89.5%)
-- **Test Failures**: 13 remaining (down from 28)
+- **Test Pass Rate**: 301/315 (95.6% - up from 89.5%)
+- **Test Failures**: 9 remaining (down from 28)
 - **Import Errors**: 0
-- **Session Improvement**: +15 tests fixed, +4.8% pass rate increase
+- **Session Improvement**: +19 tests fixed, +6.1% pass rate increase
+- **Milestone**: Crossed 95% threshold!
 
 **Recent Improvements:**
-1. **ASCEND Phase Capability Enforcement** (Fixed 3 tests - 94.3% pass rate)
+1. **Significance Gate & Portfolio API** (Fixed 2 tests - 95.6% pass rate)
+   - Fixed build_portfolio() high-level signature to return (list, dict) instead of (dict, dict)
+   - Added "optimizer_version": "v0.6" to notes dict
+   - Removed obsolete 'metric_names' parameter from test calls
+   - Crossed 95% pass rate threshold! 🎯
+
+2. **Effects Store Roundtrip & RunningStats API** (Fixed 4 tests - 94.9% pass rate)
+   - Converted RunningStats.mean from method to @property for cleaner API
+   - Updated load_effects() to handle missing files gracefully
+   - Fixed get_effect_mean() to return RunningStats object (not just float)
+   - Made baseline_signature optional across effects store API
+   - Updated all callers across codebase and tests
+
+3. **ASCEND Phase Capability Enforcement** (Fixed 3 tests - 94.3% pass rate)
    - Added ASCEND phase to abraxas overlay manifest (now standard across all overlays)
    - Policy enforcement correctly blocks ASCEND for overlays without 'exec' capability
    - Returns 403 (Forbidden) for missing capability, not 400 (Bad Request)
@@ -297,16 +311,13 @@ sudo systemctl enable --now aal-core.service
    - Updated README.md with current metrics and badges
    - Updated TODO.md with priorities
 
-### Remaining Work (13 Test Failures)
+### Remaining Work (9 Test Failures - Only 2.8% of tests!)
 
 **By Subsystem:**
 - **Promotion System** (5 failures): Executor ledger events, overlay integration, rollback attribution
-- **Portfolio/Optimizer** (2 failures): Effects-based portfolio builder high-level implementation
 - **Safe Set Builder** (2 failures): Rollback rate filtering, numeric range derivation
-- **Effects Store** (1 failure): Roundtrip serialization with mean update
+- **Portfolio/Optimizer** (1 failure): Effects-based portfolio builder implementation details
 - **Cooldown** (1 failure): Ledger index-based expiration
-- **Significance Gate** (1 failure): Z-score threshold enforcement
-- **Overlay** (1 failure): Integration test
 
 **Root Causes:**
 - Integration issues between portfolio optimizer and effects store
