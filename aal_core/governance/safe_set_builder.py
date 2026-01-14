@@ -96,7 +96,7 @@ def build_safe_sets(
             metric_name=metric_name,
         )
         if st is not None:
-            m = st.mean()
+            m = st.mean
             if m is not None and float(m) > max_bad_metric_mean:
                 continue
 

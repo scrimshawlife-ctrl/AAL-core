@@ -112,7 +112,7 @@ def scan_for_promotions(
         if st.n < min_samples:
             continue
 
-        mean = st.mean()
+        mean = st.mean
         if mean is None:
             continue
         if abs(float(mean)) < min_abs:

@@ -78,5 +78,5 @@ def test_canary_rolls_back_on_drift_and_records_negative_evidence():
     )
     assert st is not None
     assert st.n == 1
-    assert st.mean() == 40.0
+    assert st.mean == 40.0
 

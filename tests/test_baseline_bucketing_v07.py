@@ -64,8 +64,8 @@ def test_effects_are_isolated_per_baseline_bucket():
     )
     assert a is not None and b is not None
     assert a.n == 1 and b.n == 1
-    assert a.mean() == -10.0
-    assert b.mean() == 10.0
+    assert a.mean == -10.0
+    assert b.mean == 10.0
 
 
 def test_portfolio_uses_only_current_bucket_stats_and_never_cross_contaminates():

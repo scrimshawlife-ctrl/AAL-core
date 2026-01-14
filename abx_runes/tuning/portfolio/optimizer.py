@@ -173,7 +173,7 @@ def _build_portfolio_single_module(
             if st is None:
                 continue
             any_bucket_local = True
-            m = st.mean()
+            m = st.mean
             if m is None:
                 continue
             if ck in cooldown_store.entries:
@@ -205,7 +205,7 @@ def _build_portfolio_single_module(
                         rs = (metrics or {}).get(metric_name)
                         if rs is None:
                             continue
-                        m = rs.mean()
+                        m = rs.mean
                         if m is None:
                             continue
                         se = _stderr(rs)

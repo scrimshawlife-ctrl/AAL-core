@@ -24,6 +24,7 @@ class RunningStats:
         self.s1 += float(x)
         self.s2 += float(x) * float(x)
 
+    @property
     def mean(self) -> Optional[float]:
         if self.n <= 0:
             return None
@@ -32,8 +33,9 @@ class RunningStats:
     def variance(self) -> Optional[float]:
         if self.n <= 1:
             return None
-        m = self.mean()
-        assert m is not None
+        m = self.mean
+        if m is None:
+            return None
         # population variance (stable, deterministic)
         return (self.s2 / self.n) - (m * m)
 
@@ -215,13 +217,17 @@ def get_effect_mean(
     module_id: str,
     knob: str,
     value: Any,
-    baseline_signature: Dict[str, str],
     metric_name: str,
-) -> Optional[float]:
+    baseline_signature: Optional[Dict[str, str]] = None,
+) -> Optional[RunningStats]:
     """
-    Retrieve mean effect for a specific configuration.
+    Retrieve effect stats for a specific configuration.
+    Returns RunningStats object with mean, n, etc.
     """
-    stats = get_effect_stats(
+    if baseline_signature is None:
+        baseline_signature = {}
+
+    return get_effect_stats(
         store,
         module_id=module_id,
         knob=knob,
@@ -229,7 +235,6 @@ def get_effect_mean(
         baseline_signature=baseline_signature,
         metric_name=metric_name,
     )
-    return stats.mean() if stats else None
 
 
 def save_effects(store: EffectStore, path: str) -> None:
@@ -244,8 +249,15 @@ def save_effects(store: EffectStore, path: str) -> None:
 def load_effects(path: str) -> EffectStore:
     """
     Load effect store from JSON file.
+    If file doesn't exist, returns empty store.
     """
     import json
+    from pathlib import Path
+
+    p = Path(path)
+    if not p.exists():
+        return EffectStore()
+
     with open(path, "r") as f:
         data = json.load(f)
     return EffectStore.from_dict(data)
