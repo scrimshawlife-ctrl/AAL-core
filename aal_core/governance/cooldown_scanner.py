@@ -35,7 +35,7 @@ def run_cooldown_scan(
         return ",".join(f"{k}={sig[k]}" for k in sorted(sig))
 
     for ent in tail:
-        et = ent.get("type")
+        et = ent.get("entry_type")
         if et == "tuning_attempted":
             p = ent.get("payload") or {}
             mid = str(p.get("module_id", ""))
