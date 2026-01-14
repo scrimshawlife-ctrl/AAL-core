@@ -39,14 +39,165 @@ def build_portfolio(**kwargs) -> Tuple[Dict[str, Any], Dict[str, Any]]:
     # Dispatch based on which parameters are present
     if "policy" in kwargs:
         # High-level signature
-        # For now, return empty results since the tests seem to expect this
-        # when there are no measured effects
-        return [], {"optimizer_version": "v0.6", "excluded": {}, "shadow_only": {}, "shadow_cross_bucket": {}}
+        return _build_portfolio_high_level(**kwargs)
     elif "tuning_envelope" in kwargs:
         # Low-level signature - delegate to single module function
         return _build_portfolio_single_module(**kwargs)
     else:
         raise TypeError("build_portfolio() missing required arguments")
+
+
+def _build_portfolio_high_level(
+    *,
+    policy: Any,
+    registry_snapshot: Dict[str, Any],
+    metrics_snapshot: Dict[str, Any],
+    stabilization_state: Any,
+    effects_store: EffectStore,
+    min_samples: int = 3,
+    min_abs_latency_ms_p95: float = 1.0,
+    z_threshold: float = 2.0,
+    **_kwargs,
+) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
+    """
+    High-level portfolio builder based on policy and measured effects.
+
+    Returns:
+        Tuple of (list of tuning IRs, notes dict)
+    """
+    from aal_core.ers.effects_store import get_effect_stats
+    from aal_core.ers.capabilities import CapabilityToken
+
+    # Build candidates from measured effects
+    candidates: List[PortfolioCandidate] = []
+    metric_name = "latency_ms_p95"
+
+    # Extract tuning envelopes and capabilities
+    tuning_envelopes: Dict[str, Dict[str, Any]] = {}
+    capabilities: Dict[str, Any] = {}
+
+    for module_id, module_info in sorted(registry_snapshot.items()):
+        envelope = module_info.get("tuning_envelope")
+        if envelope:
+            tuning_envelopes[module_id] = envelope
+        capability = module_info.get("capability")
+        if capability:
+            # Convert dict to CapabilityToken if needed
+            if isinstance(capability, dict):
+                cap_module_id = capability.get("module_id", module_id)
+                allowed_list = capability.get("allowed", [])
+                capabilities[module_id] = CapabilityToken(
+                    module_id=cap_module_id,
+                    allowed=set(allowed_list) if isinstance(allowed_list, list) else allowed_list
+                )
+            else:
+                capabilities[module_id] = capability
+
+    # Build candidates from effects
+    for module_id, envelope in sorted(tuning_envelopes.items()):
+        knobs = list(envelope.get("knobs") or [])
+        baseline_metrics = metrics_snapshot.get(module_id) or {}
+
+        for spec in sorted(knobs, key=lambda k: str(k.get("name"))):
+            knob_name = str(spec.get("name"))
+            candidate_values = _candidate_values_for_knob(spec)
+
+            for value in candidate_values:
+                # Get effect stats for this (module, knob, value)
+                # Using empty baseline signature for now (bucket-agnostic)
+                st = get_effect_stats(
+                    effects_store,
+                    module_id=module_id,
+                    knob=knob_name,
+                    value=value,
+                    baseline_signature={},
+                    metric_name=metric_name,
+                )
+
+                if st is None:
+                    continue
+
+                # Check significance gates
+                if st.n < min_samples:
+                    continue
+
+                mean_delta = st.mean
+                if mean_delta is None:
+                    continue
+
+                # Check absolute magnitude
+                if abs(float(mean_delta)) < min_abs_latency_ms_p95:
+                    continue
+
+                # Check z-score significance (if variance exists)
+                se = _stderr(st)
+                if se is not None and se > 0.0:
+                    # Can compute z-score
+                    z = abs(float(mean_delta)) / float(se)
+                    if z < z_threshold:
+                        continue
+                # If se is None or 0, skip z-test (zero variance = perfect consistency = significant)
+
+                # Build candidate with impact
+                impact = ImpactVector(
+                    delta_latency_ms_p95=float(mean_delta),
+                    delta_cost_units=0.0,
+                    delta_error_rate=0.0,
+                    delta_throughput_per_s=0.0,
+                )
+
+                candidate = PortfolioCandidate(
+                    module_id=module_id,
+                    node_id="not_computable",  # Not available at portfolio level
+                    knob_name=knob_name,
+                    proposed_value=value,
+                    impact=impact,
+                    reason_tags=("measured_effect",),
+                )
+                candidates.append(candidate)
+
+    # If no candidates, return empty
+    if not candidates:
+        return [], {"optimizer_version": "v0.6", "excluded": {}, "shadow_only": {}, "shadow_cross_bucket": {}}
+
+    # Build budgets and weights from policy
+    budgets = PortfolioBudgets(
+        max_total_cost_units=getattr(policy, "budget_cost_units", None),
+        max_total_latency_ms_p95=getattr(policy, "budget_latency_ms_p95", None),
+        max_changes_per_cycle=getattr(policy, "max_changes_per_cycle", 10),
+    )
+
+    weights = PortfolioObjectiveWeights(
+        w_latency=getattr(policy, "w_latency", 1.0),
+        w_cost=getattr(policy, "w_cost", 1.0),
+        w_error=getattr(policy, "w_error", 1.0),
+        w_throughput=getattr(policy, "w_throughput", 1.0),
+    )
+
+    # Select portfolio
+    selection = select_portfolio(
+        candidates=candidates,
+        tuning_envelopes=tuning_envelopes,
+        capabilities=capabilities,
+        stabilization=stabilization_state,
+        source_cycle_id=getattr(policy, "source_cycle_id", "unknown"),
+        objective_weights=weights,
+        budgets=budgets,
+    )
+
+    # Convert to list of tuning IRs
+    items = list(selection.module_tuning_irs.values())
+
+    notes = {
+        "optimizer_version": "v0.6",
+        "excluded": {},
+        "shadow_only": {},
+        "shadow_cross_bucket": {},
+        "total_candidates": len(candidates),
+        "selected_count": len(items),
+    }
+
+    return items, notes
 
 
 def _candidate_values_for_knob(spec: Dict[str, Any]) -> List[Any]:
