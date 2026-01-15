@@ -1,11 +1,203 @@
 from __future__ import annotations
 
+import hashlib
 import math
+from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple
 
 from aal_core.ers.effects_store import EffectStore, get_effect_stats
 from aal_core.ers.cooldown import CooldownStore, cooldown_key
 from aal_core.ers.baseline_similarity import similarity
+from aal_core.ers.capabilities import can_apply
+from aal_core.ers.stabilization import allowed_by_stabilization
+
+from .types import ImpactVector, PortfolioBudgets, PortfolioCandidate, PortfolioObjectiveWeights
+
+
+@dataclass
+class PortfolioSelection:
+    """Result of portfolio selection."""
+    selected_candidates: Tuple[PortfolioCandidate, ...]
+    module_tuning_irs: Dict[str, Dict[str, Any]]
+    totals: ImpactVector
+    total_score: float
+
+
+def build_portfolio(**kwargs) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+    """
+    Portfolio builder supporting both legacy signatures.
+
+    High-level signature (policy-based):
+        policy, registry_snapshot, metrics_snapshot, stabilization_state, effects_store
+
+    Low-level signature (single-module):
+        effects_store, tuning_envelope, baseline_signature, [optional params]
+
+    Returns:
+        Tuple of (assignments_dict, notes_dict)
+    """
+    # Dispatch based on which parameters are present
+    if "policy" in kwargs:
+        # High-level signature
+        return _build_portfolio_high_level(**kwargs)
+    elif "tuning_envelope" in kwargs:
+        # Low-level signature - delegate to single module function
+        return _build_portfolio_single_module(**kwargs)
+    else:
+        raise TypeError("build_portfolio() missing required arguments")
+
+
+def _build_portfolio_high_level(
+    *,
+    policy: Any,
+    registry_snapshot: Dict[str, Any],
+    metrics_snapshot: Dict[str, Any],
+    stabilization_state: Any,
+    effects_store: EffectStore,
+    min_samples: int = 3,
+    min_abs_latency_ms_p95: float = 1.0,
+    z_threshold: float = 2.0,
+    **_kwargs,
+) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
+    """
+    High-level portfolio builder based on policy and measured effects.
+
+    Returns:
+        Tuple of (list of tuning IRs, notes dict)
+    """
+    from aal_core.ers.effects_store import get_effect_stats
+    from aal_core.ers.capabilities import CapabilityToken
+
+    # Build candidates from measured effects
+    candidates: List[PortfolioCandidate] = []
+    metric_name = "latency_ms_p95"
+
+    # Extract tuning envelopes and capabilities
+    tuning_envelopes: Dict[str, Dict[str, Any]] = {}
+    capabilities: Dict[str, Any] = {}
+
+    for module_id, module_info in sorted(registry_snapshot.items()):
+        envelope = module_info.get("tuning_envelope")
+        if envelope:
+            tuning_envelopes[module_id] = envelope
+        capability = module_info.get("capability")
+        if capability:
+            # Convert dict to CapabilityToken if needed
+            if isinstance(capability, dict):
+                cap_module_id = capability.get("module_id", module_id)
+                allowed_list = capability.get("allowed", [])
+                capabilities[module_id] = CapabilityToken(
+                    module_id=cap_module_id,
+                    allowed=set(allowed_list) if isinstance(allowed_list, list) else allowed_list
+                )
+            else:
+                capabilities[module_id] = capability
+
+    # Build candidates from effects
+    for module_id, envelope in sorted(tuning_envelopes.items()):
+        knobs = list(envelope.get("knobs") or [])
+        baseline_metrics = metrics_snapshot.get(module_id) or {}
+
+        for spec in sorted(knobs, key=lambda k: str(k.get("name"))):
+            knob_name = str(spec.get("name"))
+            candidate_values = _candidate_values_for_knob(spec)
+
+            for value in candidate_values:
+                # Get effect stats for this (module, knob, value)
+                # Using empty baseline signature for now (bucket-agnostic)
+                st = get_effect_stats(
+                    effects_store,
+                    module_id=module_id,
+                    knob=knob_name,
+                    value=value,
+                    baseline_signature={},
+                    metric_name=metric_name,
+                )
+
+                if st is None:
+                    continue
+
+                # Check significance gates
+                if st.n < min_samples:
+                    continue
+
+                mean_delta = st.mean
+                if mean_delta is None:
+                    continue
+
+                # Check absolute magnitude
+                if abs(float(mean_delta)) < min_abs_latency_ms_p95:
+                    continue
+
+                # Check z-score significance (if variance exists)
+                se = _stderr(st)
+                if se is not None and se > 0.0:
+                    # Can compute z-score
+                    z = abs(float(mean_delta)) / float(se)
+                    if z < z_threshold:
+                        continue
+                # If se is None or 0, skip z-test (zero variance = perfect consistency = significant)
+
+                # Build candidate with impact
+                impact = ImpactVector(
+                    delta_latency_ms_p95=float(mean_delta),
+                    delta_cost_units=0.0,
+                    delta_error_rate=0.0,
+                    delta_throughput_per_s=0.0,
+                )
+
+                candidate = PortfolioCandidate(
+                    module_id=module_id,
+                    node_id="not_computable",  # Not available at portfolio level
+                    knob_name=knob_name,
+                    proposed_value=value,
+                    impact=impact,
+                    reason_tags=("measured_effect",),
+                )
+                candidates.append(candidate)
+
+    # If no candidates, return empty
+    if not candidates:
+        return [], {"optimizer_version": "v0.6", "excluded": {}, "shadow_only": {}, "shadow_cross_bucket": {}}
+
+    # Build budgets and weights from policy
+    budgets = PortfolioBudgets(
+        max_total_cost_units=getattr(policy, "budget_cost_units", None),
+        max_total_latency_ms_p95=getattr(policy, "budget_latency_ms_p95", None),
+        max_changes_per_cycle=getattr(policy, "max_changes_per_cycle", 10),
+    )
+
+    weights = PortfolioObjectiveWeights(
+        w_latency=getattr(policy, "w_latency", 1.0),
+        w_cost=getattr(policy, "w_cost", 1.0),
+        w_error=getattr(policy, "w_error", 1.0),
+        w_throughput=getattr(policy, "w_throughput", 1.0),
+    )
+
+    # Select portfolio
+    selection = select_portfolio(
+        candidates=candidates,
+        tuning_envelopes=tuning_envelopes,
+        capabilities=capabilities,
+        stabilization=stabilization_state,
+        source_cycle_id=getattr(policy, "source_cycle_id", "unknown"),
+        objective_weights=weights,
+        budgets=budgets,
+    )
+
+    # Convert to list of tuning IRs
+    items = list(selection.module_tuning_irs.values())
+
+    notes = {
+        "optimizer_version": "v0.6",
+        "excluded": {},
+        "shadow_only": {},
+        "shadow_cross_bucket": {},
+        "total_candidates": len(candidates),
+        "selected_count": len(items),
+    }
+
+    return items, notes
 
 
 def _candidate_values_for_knob(spec: Dict[str, Any]) -> List[Any]:
@@ -74,7 +266,7 @@ def _stderr(rs: Any) -> Optional[float]:
     return math.sqrt(var / float(n))
 
 
-def build_portfolio(
+def _build_portfolio_single_module(
     *,
     effects_store: EffectStore,
     tuning_envelope: Dict[str, Any],
@@ -86,25 +278,37 @@ def build_portfolio(
     min_similarity: float = 0.75,
     shadow_penalty: float = 0.5,
     z_threshold_shadow: float = 3.0,
+    promotion_overlay: Any = None,  # PromotionOverlay optional
 ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
     """
-    Bucket-aware portfolio selection (v0.8).
+    Bucket-aware portfolio selection for a single module (v0.8).
 
     - Uses only effects from (module, knob, value, baseline_signature, metric_name)
     - If no bucket-specific stats exist for a knob, optional shadow-only selection:
       - If enabled, may generalize shadow-only from similar buckets with penalties and stricter z
       - Never applies cross-bucket; applied tuning remains bucket-local
     """
+    from aal_core.runtime.promotion_overlay import PromotionOverlay
+
     module_id = str(tuning_envelope.get("module_id"))
     knobs = list(tuning_envelope.get("knobs") or [])
 
     # Optimizer does not know "now_idx"; cooldown scanner is responsible for pruning expired entries.
     cooldown_store = cooldown_store or CooldownStore.load()
 
+    # Load promotion overlay if not provided
+    if promotion_overlay is None:
+        try:
+            promotion_overlay = PromotionOverlay.load()
+        except Exception:
+            promotion_overlay = None
+
     applied: Dict[str, Any] = {}
     shadow_only: Dict[str, Any] = {}
     excluded: Dict[str, str] = {}
     shadow_cross_bucket: Dict[str, Any] = {}
+    promotion_knobs_selected = 0
+    promoted_defaults_applied: list[str] = []
 
     # Deterministic traversal
     for spec in sorted(knobs, key=lambda k: str(k.get("name"))):
@@ -132,15 +336,24 @@ def build_portfolio(
             if st is None:
                 continue
             any_bucket_local = True
-            m = st.mean()
+            m = st.mean
             if m is None:
                 continue
             if ck in cooldown_store.entries:
                 saw_cooled_stats = True
                 continue
-            # minimize mean delta (negative is better if latency decreases)
-            if best_score is None or m < best_score or (m == best_score and str(v) < str(best_val)):
-                best_score = m
+            # minimize mean delta (negative is better if latency decreases), with promotion bias
+            bias = 0.0
+            if promotion_overlay is not None:
+                bias = promotion_overlay.score_bias(
+                    module_id=module_id,
+                    knob=name,
+                    value=v,
+                    baseline_signature=baseline_signature,
+                )
+            score = float(m) - bias  # Lower is better; bias makes promoted values more attractive
+            if best_score is None or score < best_score or (score == best_score and str(v) < str(best_val)):
+                best_score = score
                 best_val = v
 
         if best_val is None:
@@ -164,7 +377,7 @@ def build_portfolio(
                         rs = (metrics or {}).get(metric_name)
                         if rs is None:
                             continue
-                        m = rs.mean()
+                        m = rs.mean
                         if m is None:
                             continue
                         se = _stderr(rs)
@@ -218,6 +431,18 @@ def build_portfolio(
                         excluded[name] = "no_bucket_stats" if not any_bucket_local else "no_usable_bucket_stats"
                     continue
 
+            # Check for promoted default before falling back to shadow_only or exclusion
+            if promotion_overlay is not None:
+                promoted_val = promotion_overlay.get_promoted_value(
+                    module_id=module_id,
+                    knob=name,
+                    baseline_signature=baseline_signature,
+                )
+                if promoted_val is not None:
+                    applied[name] = promoted_val
+                    promoted_defaults_applied.append(name)
+                    continue
+
             if allow_shadow_only:
                 shadow_only[name] = spec.get("default")
                 excluded[name] = "cooldown_active" if saw_cooled_stats else "shadow_only_no_bucket_stats"
@@ -227,6 +452,16 @@ def build_portfolio(
 
         applied[name] = best_val
 
+        # Track if this was a promoted value
+        if promotion_overlay is not None:
+            promoted_val = promotion_overlay.get_promoted_value(
+                module_id=module_id,
+                knob=name,
+                baseline_signature=baseline_signature,
+            )
+            if promoted_val is not None and str(promoted_val) == str(best_val):
+                promotion_knobs_selected += 1
+
     notes = {
         "module_id": module_id,
         "metric_name": metric_name,
@@ -234,10 +469,172 @@ def build_portfolio(
         "excluded": excluded,
         "shadow_only": shadow_only,
         "shadow_cross_bucket": shadow_cross_bucket,
+        "promotion_knobs_selected": promotion_knobs_selected,
+        "promoted_defaults_applied": promoted_defaults_applied,
     }
     return applied, notes
 
 
-# Compatibility alias
-select_portfolio = build_portfolio
+def select_portfolio(
+    *,
+    candidates: List[PortfolioCandidate],
+    tuning_envelopes: Dict[str, Dict[str, Any]],
+    capabilities: Dict[str, Any],
+    stabilization: Any,
+    source_cycle_id: str,
+    objective_weights: PortfolioObjectiveWeights,
+    budgets: PortfolioBudgets,
+) -> PortfolioSelection:
+    """
+    Select optimal portfolio from candidates based on impact and constraints.
+
+    Args:
+        candidates: List of portfolio candidates to consider
+        tuning_envelopes: Dict of module_id -> tuning_envelope
+        capabilities: Dict of module_id -> CapabilityToken
+        stabilization: StabilizationState
+        source_cycle_id: Cycle identifier
+        objective_weights: Weights for scoring (negative weights mean minimize)
+        budgets: Budget constraints
+
+    Returns:
+        PortfolioSelection with selected candidates and tuning IRs
+    """
+    # Score each candidate
+    scored: List[Tuple[float, PortfolioCandidate]] = []
+
+    for candidate in candidates:
+        module_id = candidate.module_id
+        knob_name = candidate.knob_name
+        proposed_value = candidate.proposed_value
+
+        # Get envelope and capability
+        envelope = tuning_envelopes.get(module_id)
+        capability = capabilities.get(module_id)
+
+        if not envelope or capability is None:
+            continue
+
+        # Find knob spec
+        knobs = list(envelope.get("knobs") or [])
+        knob_spec = None
+        for spec in knobs:
+            if str(spec.get("name")) == knob_name:
+                knob_spec = spec
+                break
+
+        if knob_spec is None:
+            continue
+
+        # Check capability requirement
+        req_cap = str(knob_spec.get("capability_required", "")).strip()
+        if req_cap and not can_apply(capability, req_cap):
+            continue
+
+        # Check stabilization
+        stab_cycles = int(knob_spec.get("stabilization_cycles", 0) or 0)
+        if not allowed_by_stabilization(stabilization, module_id, knob_name, stab_cycles):
+            continue
+
+        # Check hot_apply
+        if not bool(knob_spec.get("hot_apply", False)):
+            continue
+
+        # Score using objective weights and impact
+        impact = candidate.impact
+        score = (
+            objective_weights.w_latency * impact.delta_latency_ms_p95
+            + objective_weights.w_cost * impact.delta_cost_units
+            + objective_weights.w_error * impact.delta_error_rate
+            + objective_weights.w_throughput * impact.delta_throughput_per_s
+        )
+
+        scored.append((score, candidate))
+
+    # Sort by score (higher is better - less negative for minimization), then by stable key for determinism
+    scored.sort(key=lambda x: (-x[0], x[1].module_id, x[1].knob_name, str(x[1].proposed_value)))
+
+    # Apply budgets
+    selected: List[PortfolioCandidate] = []
+    budget_cost_spent = 0.0  # Track budget spend (only positive deltas)
+    budget_latency_spent = 0.0  # Track budget spend (only positive deltas)
+    total_cost = 0.0  # Track full impact (all deltas)
+    total_latency = 0.0  # Track full impact (all deltas)
+    total_error = 0.0
+    total_throughput = 0.0
+    changes = 0
+
+    # Track one knob per module
+    module_knobs: Dict[str, Dict[str, Any]] = {}
+
+    for score, candidate in scored:
+        if changes >= budgets.max_changes_per_cycle:
+            break
+
+        # Check budget constraints - only positive deltas (degradations) count toward budget
+        cost_spend = max(0.0, candidate.impact.delta_cost_units)
+        latency_spend = max(0.0, candidate.impact.delta_latency_ms_p95)
+        new_budget_cost = budget_cost_spent + cost_spend
+        new_budget_latency = budget_latency_spent + latency_spend
+
+        if budgets.max_total_cost_units is not None and new_budget_cost > budgets.max_total_cost_units:
+            continue
+        if budgets.max_total_latency_ms_p95 is not None and new_budget_latency > budgets.max_total_latency_ms_p95:
+            continue
+
+        # Track module knobs (only one knob per module)
+        if candidate.module_id not in module_knobs:
+            module_knobs[candidate.module_id] = {}
+
+        # Skip if this knob already selected for this module
+        if candidate.knob_name in module_knobs[candidate.module_id]:
+            continue
+
+        module_knobs[candidate.module_id][candidate.knob_name] = candidate.proposed_value
+
+        selected.append(candidate)
+        budget_cost_spent = new_budget_cost
+        budget_latency_spent = new_budget_latency
+        total_cost += candidate.impact.delta_cost_units  # Full delta
+        total_latency += candidate.impact.delta_latency_ms_p95  # Full delta
+        total_error += candidate.impact.delta_error_rate
+        total_throughput += candidate.impact.delta_throughput_per_s
+        changes += 1
+
+    # Build module tuning IRs
+    module_tuning_irs: Dict[str, Dict[str, Any]] = {}
+
+    for module_id, assignments in module_knobs.items():
+        # Get node_id from first candidate for this module
+        node_id = "not_computable"
+        for c in selected:
+            if c.module_id == module_id:
+                node_id = c.node_id
+                break
+
+        module_tuning_irs[module_id] = {
+            "schema_version": "tuning-ir/0.2",
+            "module_id": module_id,
+            "node_id": node_id,
+            "mode": "applied_tune",
+            "source_cycle_id": source_cycle_id,
+            "assignments": dict(assignments),
+        }
+
+    # Calculate total score
+    total_score = sum(score for score, _ in scored[:len(selected)])
+
+    totals = ImpactVector(
+        delta_latency_ms_p95=total_latency,
+        delta_cost_units=total_cost,
+        delta_error_rate=total_error,
+        delta_throughput_per_s=total_throughput,
+    )
+
+    return PortfolioSelection(
+        selected_candidates=tuple(selected),
+        module_tuning_irs=module_tuning_irs,
+        totals=totals,
+        total_score=total_score,
+    )
 

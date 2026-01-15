@@ -6,8 +6,77 @@ from typing import Any, Callable, Dict, List, Optional, Tuple
 from .canary_apply import CanaryResult, canary_apply_tuning_ir
 from .tuning_apply import HotApplyResult, hot_apply_tuning_ir
 
-# Compatibility alias
-hot_apply_portfolio_tuning_ir = hot_apply_tuning_ir
+
+@dataclass(frozen=True)
+class PortfolioHotApplyResult:
+    """Result of applying a portfolio tuning IR."""
+    rejected: Dict[str, str]  # Portfolio-level rejections
+    per_module: Dict[str, HotApplyResult]  # Module-level results
+
+
+def hot_apply_portfolio_tuning_ir(
+    *,
+    portfolio_tuning_ir: Dict[str, Any],
+    tuning_envelopes: Dict[str, Dict[str, Any]],
+    capabilities: Dict[str, Any],
+    stab: Any,
+    cycle_boundary: bool = True,
+) -> PortfolioHotApplyResult:
+    """
+    Apply a portfolio tuning IR to multiple modules.
+
+    Args:
+        portfolio_tuning_ir: Portfolio structure with modules list
+        tuning_envelopes: Dict of module_id -> tuning_envelope
+        capabilities: Dict of module_id -> CapabilityToken
+        stab: StabilizationState
+        cycle_boundary: Whether this is a cycle boundary
+
+    Returns:
+        PortfolioHotApplyResult with rejected dict and per_module results
+    """
+    modules = portfolio_tuning_ir.get("modules", [])
+
+    # Validate for duplicate module IDs
+    seen_module_ids = set()
+    for mod in modules:
+        module_id = mod.get("module_id", "")
+        if module_id in seen_module_ids:
+            return PortfolioHotApplyResult(
+                rejected={"__all__": f"duplicate_module_id:{module_id}"},
+                per_module={},
+            )
+        seen_module_ids.add(module_id)
+
+    # Apply each module's tuning IR
+    per_module: Dict[str, HotApplyResult] = {}
+
+    for mod in modules:
+        module_id = str(mod.get("module_id", ""))
+        tuning_ir = mod.get("tuning_ir", {})
+
+        # Get envelope and capability for this module
+        envelope = tuning_envelopes.get(module_id, {})
+        capability = capabilities.get(module_id)
+
+        if not envelope or capability is None:
+            per_module[module_id] = HotApplyResult(
+                applied={},
+                rejected={"__all__": "missing_envelope_or_capability"},
+            )
+            continue
+
+        # Apply the tuning IR
+        result = hot_apply_tuning_ir(
+            tuning_ir=tuning_ir,
+            tuning_envelope=envelope,
+            capability=capability,
+            stab=stab,
+            cycle_boundary=cycle_boundary,
+        )
+        per_module[module_id] = result
+
+    return PortfolioHotApplyResult(rejected={}, per_module=per_module)
 
 
 @dataclass(frozen=True)

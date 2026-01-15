@@ -128,7 +128,8 @@ def test_failing_canary_revokes_existing_promotion():
         ]
 
         def get_metrics_snapshot() -> Dict[str, Any]:
-            return metrics.pop(0) if metrics else {"latency_ms_p95": 120.0}
+            # Return dict(module_id -> metrics dict)
+            return {"m1": metrics.pop(0)} if metrics else {"m1": {"latency_ms_p95": 120.0}}
 
         def get_current_assignments(module_id: str) -> Dict[str, Any]:
             return assignments
@@ -149,7 +150,10 @@ def test_failing_canary_revokes_existing_promotion():
             effects_store=effects,
             get_metrics_snapshot=get_metrics_snapshot,
             get_current_assignments=get_current_assignments,
-            policy={"canary_max_abs_delta": 1.0, "canary_max_rel_delta": 0.01},
+            policy={
+                "rollback_latency_spike_ratio": 1.10,
+                "rollback_degraded_score_threshold": 0.01,  # Lower threshold to trigger rollback
+            },
             promotions_path=promotions_path,
             ledger_path=ledger_path,
         )

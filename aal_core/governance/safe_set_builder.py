@@ -54,7 +54,7 @@ def build_safe_sets(
     rollbacks = defaultdict(int)  # same key
 
     for ent in tail:
-        t = ent.get("type")
+        t = ent.get("entry_type")
         if t == "tuning_attempted":
             p = ent.get("payload") or {}
             mid = str(p.get("module_id", ""))
@@ -96,7 +96,7 @@ def build_safe_sets(
             metric_name=metric_name,
         )
         if st is not None:
-            m = st.mean()
+            m = st.mean
             if m is not None and float(m) > max_bad_metric_mean:
                 continue
 

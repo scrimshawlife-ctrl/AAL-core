@@ -39,7 +39,6 @@ def test_z_gate_blocks_noisy_small_effect():
         value=True,
         before_metrics={"latency_ms_p95": 100.0},
         after_metrics={"latency_ms_p95": 99.0},
-        metric_names=["latency_ms_p95"],
     )
     record_effect(
         effects,
@@ -48,7 +47,6 @@ def test_z_gate_blocks_noisy_small_effect():
         value=True,
         before_metrics={"latency_ms_p95": 99.0},
         after_metrics={"latency_ms_p95": 100.0},
-        metric_names=["latency_ms_p95"],
     )
     record_effect(
         effects,
@@ -57,7 +55,6 @@ def test_z_gate_blocks_noisy_small_effect():
         value=True,
         before_metrics={"latency_ms_p95": 100.0},
         after_metrics={"latency_ms_p95": 99.0},
-        metric_names=["latency_ms_p95"],
     )
 
     items, notes = build_portfolio(

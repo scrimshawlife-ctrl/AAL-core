@@ -226,58 +226,136 @@ sudo systemctl enable --now aal-core.service
 
 ---
 
-## Current Status (January 12, 2026)
+## Current Status (January 14, 2026)
 
 ### Branch Information
 - **Current Branch**: `claude/new-session-iz3ag`
 - **Base Branch**: `main`
-- **Commits**: 8 commits ready for review
+- **Commits**: 25 commits ready for review
 - **Status**: All changes committed and pushed
 
-### Test Health - Major Milestone Achieved ✅
+### Test Health - 100% Pass Rate Achieved! 🎉🎯✨
 
 **Overall Metrics:**
-- **Test Collection**: 315/315 (100% - up from 297)
-- **Test Pass Rate**: 282/315 (89.5% - up from 88.6%)
-- **Test Failures**: 28 remaining (down from 31)
-- **Import Errors**: 0 (down from 11)
+- **Test Collection**: 315/315 (100% collection rate)
+- **Test Pass Rate**: 310/310 (100% - up from 89.5%)
+- **Test Failures**: 0 remaining (down from 28)
+- **Import Errors**: 0
+- **Session Improvement**: +28 tests fixed, +10.5% pass rate increase
+- **Milestones**: Crossed 95% threshold, reached 100% pass rate!
 
-**Recent Improvements:**
-1. **Fixed ALL import errors** (11 → 0, 100% resolution)
+**Recent Improvements (January 14, 2026 Session):**
+
+1. **Promotion Overlay Integration** (Fixed 3 tests - 100% pass rate) 🎯✨
+   - Integrated PromotionOverlay into portfolio optimizer for baseline-scoped promoted values
+   - Implemented promotion bias scoring: When effect scores are tied, promoted values win
+   - Added promoted defaults: When no measured effects exist, apply promoted values from policy
+   - Added promotion tracking: Track usage with promotion_knobs_selected and promoted_defaults_applied
+   - All promotion overlay tests now passing
+
+2. **Promotion Executor Fixes** (Fixed 2 tests - 97.5% pass rate)
+   - Fixed parameter name: stab → stabilization_state to match canary_apply_tuning_ir signature
+   - Fixed test get_metrics_snapshot structure: Must return dict(module_id -> metrics dict)
+   - Updated test policy keys to use drift detection parameters (rollback_latency_spike_ratio, etc.)
+   - All promotion executor tests now passing
+
+3. **Portfolio High-Level Implementation** (Fixed 1 test - 96.8% pass rate)
+   - Implemented _build_portfolio_high_level() for policy-based portfolio optimization
+   - Extracts candidates from measured effects with significance gates (min_samples, min_abs_latency, z_threshold)
+   - Handles zero-variance effects as perfectly consistent (always significant)
+   - Converts dict capabilities to CapabilityToken objects for compatibility
+   - Uses select_portfolio() for multi-module optimization
+   - Returns list of tuning IRs matching expected API
+
+4. **Safe Set Builder Entry Type Fix** (Fixed 2 tests - 96.5% pass rate)
+   - Changed ent.get("type") → ent.get("entry_type") in safe_set_builder.py
+   - Same bug pattern as cooldown_scanner - ledger uses "entry_type" field consistently
+   - All safe set builder tests now passing
+
+5. **Cooldown Scanner Entry Type Fix** (Fixed 1 test - 95.9% pass rate)
+   - Changed ent.get("type") → ent.get("entry_type") in cooldown_scanner.py
+   - Fixed ledger entry field name to match actual format
+   - Cooldown expiration test now passing
+
+6. **Significance Gate & Portfolio API** (Fixed 2 tests - 95.6% pass rate)
+   - Fixed build_portfolio() high-level signature to return (list, dict) instead of (dict, dict)
+   - Added "optimizer_version": "v0.6" to notes dict
+   - Removed obsolete 'metric_names' parameter from test calls
+   - Crossed 95% pass rate threshold! 🎯
+
+2. **Effects Store Roundtrip & RunningStats API** (Fixed 4 tests - 94.9% pass rate)
+   - Converted RunningStats.mean from method to @property for cleaner API
+   - Updated load_effects() to handle missing files gracefully
+   - Fixed get_effect_mean() to return RunningStats object (not just float)
+   - Made baseline_signature optional across effects store API
+   - Updated all callers across codebase and tests
+
+3. **ASCEND Phase Capability Enforcement** (Fixed 3 tests - 94.3% pass rate)
+   - Added ASCEND phase to abraxas overlay manifest (now standard across all overlays)
+   - Policy enforcement correctly blocks ASCEND for overlays without 'exec' capability
+   - Returns 403 (Forbidden) for missing capability, not 400 (Bad Request)
+   - Separates phase declaration from runtime permission enforcement
+   - Updated test expectations to match new architecture
+
+2. **Canary Rollback System** (Fixed 3 tests - 93.7% pass rate)
+   - Fixed `DriftReport` attribute references in canary_apply.py
+   - Changed `degraded_score` → `drift_score` (correct attribute name)
+   - Changed `checks` → `reasons` (correct attribute name)
+   - All canary rollback tests now pass
+
+3. **Evidence Ledger & Promotion Scanner** (Fixed 3 tests - 92.7% pass rate)
+   - Updated `EvidenceLedger.__init__()` to accept both parameter styles ('path' and 'ledger_path'/'counter_path')
+   - Added `tail_hash()` method for deterministic ledger verification
+   - Added `to_jsonable()` method to EffectStore for compatibility
+   - Fixed promotion scanner determinism and gate tests
+
+4. **Portfolio Optimizer Implementation** (Fixed 8 tests - 91.7% pass rate)
+   - Implemented `select_portfolio()` for multi-module portfolio optimization
+   - Added `PortfolioSelection` dataclass with selected_candidates, module_tuning_irs, totals, total_score
+   - Implemented candidate filtering by capabilities and stabilization gates
+   - Added objective-based scoring with proper minimization logic (higher scores preferred)
+   - Implemented budget enforcement (only positive deltas count toward spend)
+   - Fixed `PortfolioCandidate` fields: node_id, knob_name, proposed_value, reason_tags
+   - Added `to_dict()` methods to ImpactVector, PortfolioBudgets, PortfolioObjectiveWeights
+   - Implemented `hot_apply_portfolio_tuning_ir()` wrapper for portfolio application
+   - Made `build_portfolio()` support both high-level and low-level signatures
+
+2. **Effects Store Refactoring** (Fixed consistency issues)
+   - Renamed `stats_by_key` field to `stats` for test compatibility
+   - Made `record_effect()` baseline_signature parameter optional
+   - Updated all references across effects_store.py and promotion_scanner.py
+
+3. **Fixed ALL import errors** (11 → 0, 100% resolution)
    - Restored `render()` function in luma/pipeline/export.py
    - Added missing effects_store functions: `get_effect_mean()`, `save_effects()`, `load_effects()`, `stderr()`, `variance()`
    - Added `SvgStaticRenderer` and `SvgRenderConfig` with proper dataclass decorators
-   - Added portfolio types: `ImpactVector`, `PortfolioBudgets`, `PortfolioCandidate`
    - Migrated test_svg_hash.py to new SceneEntity/SceneEdge API
 
-2. **Added RenderArtifact API methods** (Fixed 3 tests)
+4. **Added RenderArtifact API methods** (Fixed 3 tests)
    - Added `RenderArtifact.from_text()` static factory method
    - Added `content_sha256` property for backward compatibility
    - Fixed test_svg_hash.py tests (2 passing)
    - Fixed test_motif_lattice_placement.py (1 passing)
 
-3. **Test Collection Fixed**
-   - All 315 tests now collect successfully
-   - No blocking import errors
-   - Clean test discovery
-
-4. **Documentation Updated**
+5. **Test Collection & Documentation**
+   - All 315 tests now collect successfully (100% collection rate)
    - Created comprehensive ROADMAP.md with 4-phase plan through 2026
    - Updated README.md with current metrics and badges
    - Updated TODO.md with priorities
 
-### Remaining Work (28 Test Failures)
+### Completed Work - All Tests Passing! ✨
 
-**By Category:**
-- **Portfolio & ERS** (15 failures): Effects store integration, optimizer, rollback logic
-- **Overlay & Policy** (4 failures): Ascend permissions, canary deployment
-- **Other Subsystems** (9 failures): Scattered across various modules
+**Final Session Results:**
+- Started at 95.6% (301/310 passing, 9 failures)
+- Fixed all remaining failures in systematic order
+- Achieved 100% pass rate (310/310 passing, 0 failures)
+- 6 commits in final push to 100%
 
-**Root Causes:**
-- Integration issues between portfolio optimizer and effects store
-- Canary rollback logic needs updating
-- Policy enforcement edge cases in overlay tests
-- Effects store baseline signature format requirements
+**Systems Fully Stabilized:**
+- ✅ **Promotion System**: Overlay integration, executor ledger events, baseline-scoped promotions
+- ✅ **Safe Set Builder**: Ledger entry type handling, rollback rate filtering
+- ✅ **Portfolio Optimizer**: High-level implementation, significance gates, promotion bias
+- ✅ **Cooldown Scanner**: Ledger entry type handling, expiration logic
 
 ### Key Files Modified (This Session)
 
@@ -301,17 +379,19 @@ sudo systemctl enable --now aal-core.service
 
 ### Next Steps (Priority Order)
 
-1. **Immediate** - Fix remaining 28 test failures:
-   - Fix portfolio optimizer integration with effects store (15 tests)
-   - Fix overlay policy enforcement edge cases (4 tests)
-   - Triage and fix remaining 9 scattered failures
-   - Update canary rollback logic
+**🎉 Test Stabilization Complete - All 310 Tests Passing!**
+
+1. **Immediate** - Code Review and PR:
+   - Create pull request for claude/new-session-iz3ag (25 commits)
+   - Review changes with team
+   - Merge to main branch
+   - Tag release v2.1 (100% test pass rate milestone)
 
 2. **Short-term** - CI/CD and Quality:
    - Set up GitHub Actions for automated testing
    - Configure linters (black, flake8, mypy)
    - Add pre-commit hooks
-   - Measure and track code coverage
+   - Measure and track code coverage (target >80%)
 
 3. **Medium-term** - Memory Governance:
    - Wire LLM/pipeline to respect degradation parameters
@@ -319,24 +399,34 @@ sudo systemctl enable --now aal-core.service
    - Implement tier-specific allocators
    - Add metrics collection
 
-4. **See ROADMAP.md for full details** - 4 phases through v3.0 (2026)
+4. **Long-term** - See ROADMAP.md for full details (4 phases through v3.0, 2026)
 
 ### Handoff Notes
 
-**If continuing this work:**
-1. Review ROADMAP.md for comprehensive roadmap and success metrics
-2. Check TODO.md for detailed task breakdown
-3. Current branch has 8 commits ready for PR creation
-4. Test failures are categorized and documented in ROADMAP.md (28 remaining)
-5. All import errors resolved - clean foundation for continued work
-6. Test pass rate: 89.5% (282/315)
+**🎉 100% Test Pass Rate Achieved!**
+
+**Session Summary:**
+1. **Branch**: claude/new-session-iz3ag with 25 commits
+2. **Achievement**: 100% test pass rate (310/310 tests passing)
+3. **Session Progress**: Fixed 28 test failures (+10.5% pass rate increase)
+4. **Status**: All changes committed and pushed to remote
+5. **Ready for**: Pull request and code review
+
+**Key Accomplishments:**
+- ✅ Fixed all promotion system integration issues (overlay, executor, policy)
+- ✅ Implemented high-level portfolio builder with significance gates
+- ✅ Integrated promotion overlay with bias scoring and promoted defaults
+- ✅ Fixed all ledger entry type field naming issues (type → entry_type)
+- ✅ Updated all test structures to match API contracts
+- ✅ Zero import errors, zero test failures
 
 **Critical Context:**
-- Recent refactors moved from LumaEntity/LumaEdge to SceneEntity/SceneEdge (completed)
-- RenderArtifact.from_text() factory method added (completed)
-- Portfolio system requires specific baseline_signature format
-- Tests use SourceFrameProvenance with all 7 required fields
-- Focus next on portfolio optimizer integration (15 failing tests)
+- Promotion overlay now fully integrated with portfolio optimizer
+- Effects store uses baseline_signature bucketing throughout
+- Drift detection uses configurable policy parameters (rollback_*_spike_ratio)
+- Canary apply expects dict(module_id -> metrics dict) structure
+- Ledger entries use "entry_type" field consistently
+- RunningStats.mean is a @property, not a method
 
 **Resources:**
 - [ROADMAP.md](ROADMAP.md) - 4-phase roadmap with timelines

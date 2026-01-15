@@ -8,5 +8,5 @@ def test_ascend_blocked_without_exec_capability():
         "/invoke/abraxas",
         json={"phase": "ASCEND", "data": {"op": "danger"}}
     )
-    assert r.status_code == 400
-    assert "Invalid phase" in r.json()["detail"]
+    assert r.status_code == 403
+    assert "exec" in r.json()["detail"]

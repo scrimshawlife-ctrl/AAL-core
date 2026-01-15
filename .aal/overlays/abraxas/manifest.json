@@ -2,7 +2,7 @@
   "name": "abraxas",
   "version": "2.1",
   "status": "active",
-  "phases": ["OPEN", "ALIGN", "CLEAR", "SEAL"],
+  "phases": ["OPEN", "ALIGN", "ASCEND", "CLEAR", "SEAL"],
   "capabilities": ["analysis"],
   "op_policy": {
     "hash": [],

@@ -89,7 +89,7 @@ def test_canary_rolls_back_on_drift_and_records_artifact_and_penalty():
     )
     assert st is not None
     assert st.n == 1
-    assert st.mean() == 1.0
+    assert st.mean == 1.0
 
 
 def test_canary_deterministic_rollback_hash():

@@ -130,8 +130,8 @@ def canary_apply_tuning_ir(
             "tuning_ir_hash": str(tuning_ir.get("ir_hash", "")),
             "reason": {
                 "degraded_mode": drift.degraded_mode,
-                "degraded_score": drift.degraded_score,
-                "checks": drift.checks,
+                "drift_score": drift.drift_score,
+                "reasons": drift.reasons,
             },
             "reverted_assignments": dict(rb_res.attempted),
             "provenance": {
