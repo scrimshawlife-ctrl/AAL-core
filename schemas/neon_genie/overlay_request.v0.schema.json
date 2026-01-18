@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "neon_genie.overlay_request.v0",
+  "title": "Neon-Genie Overlay Request v0",
+  "description": "Standard request envelope for Neon-Genie overlay process invocation via stdin",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "operation", "request_id", "payload", "provenance"],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "neon_genie.overlay_request.v0"
+    },
+    "operation": {
+      "type": "string",
+      "enum": ["generate", "ping", "validate"],
+      "description": "Operation to invoke on the overlay"
+    },
+    "request_id": {
+      "type": "string",
+      "minLength": 8,
+      "maxLength": 64,
+      "description": "Unique request identifier for tracing"
+    },
+    "payload": {
+      "type": "object",
+      "description": "Operation-specific payload (validated against operation schema)"
+    },
+    "provenance": {
+      "$ref": "#/$defs/ProvenanceBundle"
+    }
+  },
+  "$defs": {
+    "ProvenanceBundle": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["caller", "seed", "timestamp_utc"],
+      "properties": {
+        "caller": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 64,
+          "description": "Identity of the calling component"
+        },
+        "seed": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "SEED value for deterministic execution"
+        },
+        "timestamp_utc": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO 8601 UTC timestamp"
+        },
+        "parent_request_id": {
+          "type": "string",
+          "minLength": 8,
+          "maxLength": 64,
+          "description": "Optional parent request ID for tracing chains"
+        }
+      }
+    }
+  }
+}

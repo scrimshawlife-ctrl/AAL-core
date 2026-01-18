@@ -1,0 +1,59 @@
+{
+  "name": "neon_genie",
+  "version": "0.1.0",
+  "status": "active",
+  "runtime_type": "process",
+  "entrypoint": "node .aal/overlays/neon_genie/aal_bridge.js",
+  "io_contract": {
+    "mode": "stdin_stdout",
+    "request_schema": "neon_genie.overlay_request.v0",
+    "response_schema": "neon_genie.overlay_response.v0"
+  },
+  "timeout_ms": 5000,
+  "policy": {
+    "deterministic": true,
+    "entropy_minimization": true,
+    "seed_enforcement": true
+  },
+  "schema_version": "yggdrasil-overlay/0.1",
+  "overlay": {
+    "id": "neon_genie",
+    "description": "Neon-Genie overlay: process-based generative text synthesis via AAL bridge (shadow lane only, no forecast promotion).",
+    "default_realm": "HEL",
+    "default_lane": "shadow"
+  },
+  "runes": [
+    {
+      "id": "neon_genie.shadow.generate",
+      "depends_on": ["realm.hel", "kernel.registry"],
+      "realm": "HEL",
+      "lane": "shadow",
+      "promotion_state": "shadow",
+      "tags": ["shadow", "generative", "text_synthesis"],
+      "inputs": [
+        {
+          "name": "prompt",
+          "dtype": "str",
+          "required": true
+        },
+        {
+          "name": "context",
+          "dtype": "dict",
+          "required": false
+        }
+      ],
+      "outputs": [
+        {
+          "name": "generated_text",
+          "dtype": "str",
+          "required": true
+        },
+        {
+          "name": "metadata",
+          "dtype": "dict",
+          "required": true
+        }
+      ]
+    }
+  ]
+}

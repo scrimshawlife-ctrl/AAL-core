@@ -67,3 +67,33 @@ runes:
     notes:
       - "Tokenization contract enforced: single => exactly 1 token; compound => >=2 tokens."
       - "Shadow-only: must never change prediction weights."
+
+  - id: "neon_genie.shadow.generate.v0"
+    name: "Neon-Genie Generate"
+    version: "0.1.0"
+    lane: "shadow"
+    realm: "HEL"
+    intent: "Process-based generative text synthesis via AAL overlay bridge. Shadow-only, no forecast promotion."
+    io:
+      input_schema: "neon_genie.generate_input.v0"
+      output_schema: "neon_genie.generate_output.v0"
+    capabilities:
+      - "generate"
+      - "text_synthesis"
+    coupling:
+      legal_coupling_layer: "ABX-Runes"
+      opt_in_only: true
+    determinism:
+      required: true
+      golden_tests: true
+      invariant_hash_runs: 12
+    runtime:
+      type: "process"
+      entrypoint: "node .aal/overlays/neon_genie/aal_bridge.js"
+      io_mode: "stdin_stdout"
+      timeout_ms: 5000
+    notes:
+      - "Process-based overlay with explicit stdin/stdout contract."
+      - "SEED enforcement mandatory for deterministic generation."
+      - "Returns not_computable on missing required inputs."
+      - "No auto-routing; explicit opt-in required via coupling_map."
