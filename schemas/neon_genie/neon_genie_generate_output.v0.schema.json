@@ -1,0 +1,97 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "neon_genie.generate_output.v0",
+  "title": "Neon-Genie Generate Output v0",
+  "description": "Output schema for neon_genie.shadow.generate operation",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "generated_text", "metadata", "provenance"],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "neon_genie.generate_output.v0"
+    },
+    "generated_text": {
+      "type": "string",
+      "minLength": 0,
+      "maxLength": 16384,
+      "description": "Generated text output"
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["tokens_generated", "finish_reason"],
+      "properties": {
+        "tokens_generated": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Number of tokens generated"
+        },
+        "finish_reason": {
+          "type": "string",
+          "enum": ["complete", "max_tokens", "constraint_violation", "error"],
+          "description": "Reason for generation completion"
+        },
+        "model_version": {
+          "type": "string",
+          "pattern": "^\\d+\\.\\d+\\.\\d+$",
+          "description": "Version of generative model used"
+        },
+        "seed_echo": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Echo of SEED value used for validation"
+        },
+        "perplexity": {
+          "type": "number",
+          "minimum": 0.0,
+          "description": "Optional perplexity score"
+        },
+        "entropy_bits": {
+          "type": "number",
+          "minimum": 0.0,
+          "description": "Entropy consumed during generation (for SEED enforcement tracking)"
+        }
+      }
+    },
+    "provenance": {
+      "$ref": "#/$defs/ProvenanceBundle"
+    }
+  },
+  "$defs": {
+    "ProvenanceBundle": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["input_hash", "output_hash", "determinism_hash"],
+      "properties": {
+        "input_hash": {
+          "type": "string",
+          "minLength": 16,
+          "maxLength": 128,
+          "description": "Hash of input payload for tracing"
+        },
+        "output_hash": {
+          "type": "string",
+          "minLength": 16,
+          "maxLength": 128,
+          "description": "Hash of generated output for determinism validation"
+        },
+        "determinism_hash": {
+          "type": "string",
+          "minLength": 16,
+          "maxLength": 128,
+          "description": "Composite hash for determinism golden test"
+        },
+        "constraints_applied": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 64
+          },
+          "description": "List of constraints that were applied"
+        }
+      }
+    }
+  }
+}
